@@ -386,35 +386,127 @@
     ctx.restore();
   };
 
-  // 僧（替代阿斗）：无框"僧"字 + 头顶金箍 + 红心 + 扭动动画
-  R.monk = function (ctx, x, y, s, hearts, maxHearts, shake, t) {
+  // 僧（替代阿斗）：无框"僧"字 + 头顶金箍 + 红心 + 左右摆动躲避动画
+  // pokeT: 戳刺相位（0~1），接近 0/1 时为戳下瞬间，0.5 为收回
+  R.monk = function (ctx, x, y, s, hearts, maxHearts, shake, t, pokeT) {
     ctx.save();
     if (shake) ctx.translate((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 4);
     // 红心排
     for (var i = 0; i < maxHearts; i++) {
       R.heart(ctx, x - (maxHearts - 1) * s * 0.19 + i * s * 0.38, y - s * 0.82, s * 0.3, i < hearts);
     }
-    // 无框僧字：扭动 + 小幅跳动（参考原版"一扭一扭"效果）
-    var period = 0.8;
-    var phase = (t % period) / period;
-    // 扭动：左右旋转摆动（主体动效）
-    var twist = Math.sin(phase * Math.PI * 2) * 0.18; // ±10° 扭动
-    // 小幅跳动
-    var bob = -Math.abs(Math.sin(phase * Math.PI)) * s * 0.04;
+    // 左右摆动躲避：戳刺接近瞬间摆动幅度最大，收回时回正
+    // pokeT: 0~1，0=刚戳下，0.5=收回，1=下次戳下
+    // 用 sin 让中间过程平滑，戳下瞬间（0/1）摆动最大
+    var pokePhase = pokeT != null ? pokeT : 0;
+    // 戳刺力度曲线：在戳下点附近（pokePhase 接近 0 或 1）幅度大
+    var pokeNear = Math.cos(pokePhase * Math.PI * 2); // 1=戳下，-1=收回最远
+    var pokeForce = Math.max(0, pokeNear); // 只取戳下方向的力
+    // 摆动方向：左右交替（每次戳刺换方向）
+    var swingDir = Math.sin(t * 3) > 0 ? 1 : -1;
+    var swing = pokeForce * 0.22 * swingDir; // 戳下时摆开 12°
+    // 基础小幅度持续摆动（即便没戳也有微摆）
+    swing += Math.sin(t * 4) * 0.04;
+    // 小幅垂直跳动
+    var bob = -Math.abs(Math.sin(t * 3.5)) * s * 0.03;
+
     ctx.translate(x, y + bob);
-    ctx.rotate(twist);
+    ctx.rotate(swing);
     // 僧字阴影（轻微）
-    ctx.fillStyle = 'rgba(60,50,40,0.2)';
-    R.font(ctx, s * 0.7, true);
+    ctx.fillStyle = 'rgba(60,50,40,0.22)';
+    R.font(ctx, s * 0.82, true);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('僧', 2, s * 0.04 + 2);
-    // 僧字主体（深棕色）
+    ctx.fillText('僧', 3, s * 0.05 + 3);
+    // 僧字主体（深棕色，加粗）
     ctx.fillStyle = '#3a2a1a';
     ctx.fillText('僧', 0, s * 0.02);
     ctx.restore();
-    // 金箍（替代金冠，跟随扭动需在外层 save 之外画）
-    R.goldRing(ctx, x, y - s * 0.52 + (shake ? 0 : 0), s * 0.5, t);
+    // 金箍（替代金冠）
+    R.goldRing(ctx, x, y - s * 0.52, s * 0.5, t);
+  };
+
+  // 金箍棒（带戳刺动画）
+  // x1,y1: 棒尾固定点；x2,y2: 棒头目标点；t: 时间；period: 戳刺周期（秒）
+  R.staff = function (ctx, x1, y1, x2, y2, t, period) {
+    period = period || 1.2;
+    var phase = (t % period) / period; // 0~1
+    // 戳刺曲线：用 ease-in-out 让棒头快速戳下后收回
+    // 0~0.3: 戳下（棒头向目标点推进）；0.3~1: 收回
+    var stab;
+    if (phase < 0.3) {
+      var p = phase / 0.3; // 0~1
+      // ease-out：快速戳下
+      stab = 1 - Math.pow(1 - p, 3);
+    } else {
+      var p2 = (phase - 0.3) / 0.7; // 0~1
+      // ease-in-out：缓慢收回
+      stab = 1 - (p2 < 0.5 ? 2 * p2 * p2 : 1 - Math.pow(-2 * p2 + 2, 2) / 2);
+    }
+    // 棒头实际位置：从收回位（距目标 0.35）戳到目标点
+    var retractRatio = 0.35;
+    var headX = x2 + (x1 - x2) * retractRatio * (1 - stab);
+    var headY = y2 + (y1 - y2) * retractRatio * (1 - stab);
+
+    ctx.save();
+    // 棒身（金色，两端粗中间细的渐变感）
+    var grad = ctx.createLinearGradient(x1, y1, headX, headY);
+    grad.addColorStop(0, '#b8860b');
+    grad.addColorStop(0.5, '#e8c53a');
+    grad.addColorStop(1, '#d4a017');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 9;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(headX, headY);
+    ctx.stroke();
+    // 棒身中段花纹（金色螺旋纹）
+    ctx.strokeStyle = 'rgba(138,106,16,0.7)';
+    ctx.lineWidth = 2;
+    for (var i = 1; i < 6; i++) {
+      var r = i / 6;
+      var fx = x1 + (headX - x1) * r;
+      var fy = y1 + (headY - y1) * r;
+      ctx.beginPath();
+      ctx.arc(fx, fy, 4.5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    // 棒尾金箍（固定端，较大）
+    ctx.fillStyle = '#e8c53a';
+    ctx.strokeStyle = '#8a6a10';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x1, y1, 11, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    // 棒尾内圈
+    ctx.fillStyle = '#b8860b';
+    ctx.beginPath();
+    ctx.arc(x1, y1, 6, 0, Math.PI * 2);
+    ctx.fill();
+    // 棒头金箍（戳刺端，更大更亮）
+    ctx.fillStyle = '#fce58a';
+    ctx.beginPath();
+    ctx.arc(headX, headY, 13, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#d4a017';
+    ctx.beginPath();
+    ctx.arc(headX, headY, 7, 0, Math.PI * 2);
+    ctx.fill();
+    // 戳下瞬间（stab 接近 1）添加冲击波
+    if (stab > 0.85) {
+      var waveAlpha = (stab - 0.85) / 0.15 * 0.6;
+      ctx.globalAlpha = waveAlpha;
+      ctx.strokeStyle = '#fce58a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(headX, headY, 18 + (1 - stab) * 40, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+    ctx.restore();
+    // 返回当前戳刺相位（0~1），供僧字摆动用
+    return phase;
   };
 
   // 金箍（孙悟空头上的紧箍咒，带光泽）

@@ -125,46 +125,18 @@
       ctx.stroke();
     }
     ctx.restore();
-    // 僧字（替代阿斗）：无框 + 扭动 + 金箍 + 红心
-    var monkX = DW / 2, monkY = by - 26, monkS = 92;
-    R.monk(ctx, monkX, monkY, monkS, 3, 3, false, t);
-    // 金箍棒斜插，棒头戳到僧字右上方
+    // 僧字（替代阿斗）：无框 + 左右摆动躲避 + 金箍 + 红心
+    var monkX = DW / 2, monkY = by - 26, monkS = 110;
+    // 金箍棒：棒尾在左下，棒头戳向僧字右上方
     ctx.save();
-    var staffTopX = monkX + 80, staffTopY = monkY - 36; // 棒头戳向僧字右上
-    var staffBotX = monkX - 80, staffBotY = monkY + 130; // 棒尾斜插向下
-    // 金箍棒棒身（金色）
-    ctx.strokeStyle = '#d4a017';
-    ctx.lineWidth = 8;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(staffTopX, staffTopY);
-    ctx.lineTo(staffBotX, staffBotY);
-    ctx.stroke();
-    // 棒身花纹
-    ctx.strokeStyle = '#8a6a10';
-    ctx.lineWidth = 2;
-    for (var bi = 0; bi < 6; bi++) {
-      var ratio = bi / 5;
-      var bx1 = staffTopX + (staffBotX - staffTopX) * ratio;
-      var by1 = staffTopY + (staffBotY - staffTopY) * ratio;
-      ctx.beginPath();
-      ctx.arc(bx1, by1, 5, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-    // 金箍棒两端（金箍球）
-    ctx.fillStyle = '#e8c53a';
-    ctx.strokeStyle = '#8a6a10';
-    ctx.lineWidth = 2;
-    // 棒头（戳向僧字的一端，较大）
-    ctx.beginPath();
-    ctx.arc(staffTopX, staffTopY, 11, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
-    // 棒尾
-    ctx.beginPath();
-    ctx.arc(staffBotX, staffBotY, 9, 0, Math.PI * 2);
-    ctx.fill(); ctx.stroke();
+    var staffTailX = monkX - 95, staffTailY = monkY + 130; // 棒尾（固定）
+    var staffHeadX = monkX + 52, staffHeadY = monkY - 28;  // 棒头目标（戳向僧字右上）
+    // 先画金箍棒，拿到戳刺相位
+    var pokePhase = R.staff(ctx, staffTailX, staffTailY, staffHeadX, staffHeadY, t, 1.2);
+    // 再画僧字，传入戳刺相位让它摆动躲避
+    R.monk(ctx, monkX, monkY, monkS, 3, 3, false, t, pokePhase);
     // 悟空题字（跳动金字牌，放在左下）
-    R.livingTile(ctx, monkX - 130, monkY + 96, 78, '悟空', 'general', t);
+    R.livingTile(ctx, monkX - 140, monkY + 96, 78, '悟空', 'general', t);
     ctx.restore();
 
     // 开始按钮
