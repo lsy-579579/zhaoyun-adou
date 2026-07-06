@@ -309,9 +309,9 @@
     var prog = ZY.Rank.load();
     R.font(ctx, 30, true);
     ctx.fillStyle = '#e8dfc8';
-    ctx.fillText(prog.rankName + (prog.rank === C.RANKS.length - 1 ? '' : ' · ' + prog.stars + '/' + C.STARS_PER_RANK), DW / 2, DH * 0.32 - 26);
+    var maxed = ZY.Rank.isMaxed(prog);
+    ctx.fillText(prog.rankName + (maxed ? '' : ' · ' + prog.stars + '/' + C.STARS_PER_RANK), DW / 2, DH * 0.32 - 26);
     var starShow = prog.stars;
-    if (win) starShow = Math.min(C.STARS_PER_RANK, starShow + 1); // 本场通关后即将得到的星
     for (var i = 0; i < C.STARS_PER_RANK; i++) {
       R.star(ctx, DW / 2 - 128 + i * 64, DH * 0.32 + 18, 24, i < starShow);
     }
