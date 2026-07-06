@@ -58,6 +58,7 @@
     ZY.Board.eachUnit(S, function (u, c, r) {
       var st = ZY.unitStats(u);
       if (st.inert) return;
+      if (u.attackT > 0) u.attackT -= dt; // 攻击变形动画计时
       u.cd -= dt;
       if (u.cd > 0) return;
       if (!list.length) { u.cd = 0.08; return; }
@@ -76,6 +77,7 @@
         }
         if (hitAny) {
           u.cd = st.itv;
+          u.attackT = 0.35; // 触发文字变形
           BT.fx('roar', p.x, p.y);
           if (side === 'p') ZY.sfx('shoot');
         } else u.cd = 0.08;
@@ -86,6 +88,7 @@
         var t0 = mostAdvanced(list, p.x, p.y, range);
         if (!t0) { u.cd = 0.08; return; }
         u.cd = st.itv;
+        u.attackT = 0.35; // 触发文字变形
         // 贯穿：目标连线上的敌人全部命中
         var ang = Math.atan2(t0.y - p.y, t0.x - p.x);
         BT.fx('lance', p.x, p.y, ang, range);
@@ -104,6 +107,7 @@
       var target = mostAdvanced(list, p.x, p.y, range);
       if (!target) { u.cd = 0.08; return; }
       u.cd = st.itv;
+      u.attackT = 0.35; // 触发文字变形
       var exec = st.skill === 'execute' && !target.boss && target.hp / target.maxHp < 0.35;
       G.bullets.push({
         x: p.x, y: p.y - L.cell * 0.2,

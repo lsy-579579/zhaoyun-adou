@@ -386,6 +386,163 @@
     ctx.restore();
   };
 
+  // 攻击瞬间文字变形化作兵器（原版核心视觉特色）
+  // attackT: 攻击动画剩余时间（秒），从 0.35 衰减到 0
+  // ch: 兵种字（刀/枪/弓/骑）或武将名
+  // kind: 's' 兵种 | 'g' 武将
+  R.morphTile = function (ctx, x, y, s, ch, kind, attackT) {
+    if (!attackT || attackT <= 0) return false; // 无变形，调用方走默认渲染
+    ctx.save();
+    // 进度 0~1：0=刚触发，1=恢复
+    var maxT = 0.35;
+    var p = 1 - attackT / maxT; // 0→1
+    // 变形曲线：前 30% 快速变形到武器形，70% 恢复
+    var morph;
+    if (p < 0.3) {
+      morph = p / 0.3; // 0→1 快速变形
+    } else {
+      morph = 1 - (p - 0.3) / 0.7; // 1→0 缓慢恢复
+    }
+    morph = Math.max(0, Math.min(1, morph));
+    // 旋转角度：变形时旋转 90°（文字立起变兵器）
+    var rot = morph * Math.PI / 2 * 0.5; // 最多 45°
+    // 缩放：变形时略微拉长（兵器形态）
+    var scaleY = 1 + morph * 0.25;
+    var scaleX = 1 - morph * 0.1;
+    // 闪光透明度
+    var flash = morph * 0.4;
+
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.scale(scaleX, scaleY);
+    ctx.globalAlpha = 1;
+
+    // 金光描边（变形时的能量光）
+    if (flash > 0.05) {
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = 12 * morph;
+    }
+
+    // 兵器形态：根据兵种画不同武器
+    if (kind === 's') {
+      var weaponColor = '#5a3a1a';
+      var metalColor = '#c0c0c0';
+      ctx.fillStyle = weaponColor;
+      ctx.strokeStyle = '#2a1a0a';
+      ctx.lineWidth = 1.5;
+      if (ch === '刀') {
+        // 刀：弧形刀刃
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.3, s * 0.35);
+        ctx.quadraticCurveTo(s * 0.25, s * 0.1, s * 0.3, -s * 0.35);
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = metalColor;
+        ctx.stroke();
+        // 刀柄
+        ctx.strokeStyle = weaponColor;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.3, s * 0.35);
+        ctx.lineTo(-s * 0.4, s * 0.45);
+        ctx.stroke();
+      } else if (ch === '枪') {
+        // 枪：长杆 + 枪头
+        ctx.strokeStyle = weaponColor;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(0, s * 0.45);
+        ctx.lineTo(0, -s * 0.2);
+        ctx.stroke();
+        // 枪头（三角）
+        ctx.fillStyle = metalColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -s * 0.4);
+        ctx.lineTo(-s * 0.1, -s * 0.15);
+        ctx.lineTo(s * 0.1, -s * 0.15);
+        ctx.closePath();
+        ctx.fill();
+      } else if (ch === '弓') {
+        // 弓：弧形
+        ctx.strokeStyle = weaponColor;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, 0, s * 0.35, -Math.PI * 0.4, Math.PI * 0.4);
+        ctx.stroke();
+        // 弓弦
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(s * 0.27, -s * 0.32);
+        ctx.lineTo(s * 0.27, s * 0.32);
+        ctx.stroke();
+        // 箭
+        ctx.strokeStyle = metalColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(s * 0.27, 0);
+        ctx.lineTo(-s * 0.2, 0);
+        ctx.stroke();
+      } else if (ch === '骑') {
+        // 骑：长矛 + 马蹄（用交叉长矛表示）
+        ctx.strokeStyle = weaponColor;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(-s * 0.3, s * 0.35);
+        ctx.lineTo(s * 0.3, -s * 0.35);
+        ctx.stroke();
+        ctx.fillStyle = metalColor;
+        ctx.beginPath();
+        ctx.moveTo(s * 0.3, -s * 0.35);
+        ctx.lineTo(s * 0.18, -s * 0.2);
+        ctx.lineTo(s * 0.4, -s * 0.2);
+        ctx.closePath();
+        ctx.fill();
+      }
+    } else if (kind === 'g') {
+      // 武将攻击：金色光芒爆发
+      ctx.fillStyle = '#ffd700';
+      ctx.strokeStyle = '#b8860b';
+      ctx.lineWidth = 2;
+      // 四芒星
+      ctx.beginPath();
+      for (var i = 0; i < 8; i++) {
+        var a = i / 8 * Math.PI * 2;
+        var r = i % 2 === 0 ? s * 0.4 : s * 0.18;
+        var px = Math.cos(a) * r;
+        var py = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    ctx.shadowBlur = 0;
+
+    // 变形期间叠加原文字（半透明，做"文字→兵器"过渡）
+    if (morph > 0.3) {
+      ctx.globalAlpha = (morph - 0.3) / 0.7 * 0.5;
+      ctx.rotate(-rot);
+      ctx.scale(1 / scaleX, 1 / scaleY);
+      ctx.fillStyle = kind === 'g' ? '#7a2a1a' : '#28221a';
+      if (ch.length === 1) {
+        R.font(ctx, s * 0.5, true);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ch, 0, 0);
+      } else {
+        R.font(ctx, s * 0.3, true);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ch[0], 0, -s * 0.2);
+        ctx.fillText(ch[1], 0, s * 0.2);
+      }
+    }
+
+    ctx.restore();
+    return true; // 已渲染变形
+  };
+
   // 僧（替代阿斗）：无框"僧"字 + 头顶金箍 + 红心 + 左右摆动躲避动画
   // pokeT: 戳刺相位（0~1），接近 0/1 时为戳下瞬间，0.5 为收回
   R.monk = function (ctx, x, y, s, hearts, maxHearts, shake, t, pokeT) {

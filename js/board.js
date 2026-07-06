@@ -274,6 +274,14 @@
     if (u.kind === 'f') { opt.gold = true; }
     if (u.kind === 'g') { opt.gold = true; opt.hl = true; }
     var ch = u.kind === 'g' ? u.name : u.ch;
+    // 攻击瞬间文字变形化作兵器（原版核心特色）
+    if ((u.kind === 's' || u.kind === 'g') && u.attackT && u.attackT > 0) {
+      ctx.save();
+      ctx.globalAlpha = alpha != null ? alpha : 1;
+      var morphed = R.morphTile(ctx, x, y, size, ch, u.kind, u.attackT);
+      ctx.restore();
+      if (morphed) return;
+    }
     if (u.kind === 'g') {
       // 双字武将牌：字号缩小
       ctx.save();
