@@ -835,6 +835,179 @@
     ctx.restore();
   };
 
+  // 可解锁格（铲子目标）：灰色虚线 + 土块纹理，提示可挖
+  R.tileUnlockable = function (ctx, x, y, s) {
+    ctx.save();
+    // 暗绿/灰底
+    ctx.fillStyle = 'rgba(120,110,90,0.35)';
+    ctx.fillRect(x + 2, y + 2, s - 4, s - 4);
+    // 虚线边框（可挖提示）
+    ctx.strokeStyle = 'rgba(90,70,40,0.7)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.strokeRect(x + 3, y + 3, s - 6, s - 6);
+    ctx.setLineDash([]);
+    // 中央土块小图标
+    ctx.fillStyle = 'rgba(110,80,45,0.55)';
+    ctx.beginPath();
+    ctx.arc(x + s / 2, y + s / 2, s * 0.16, 0, Math.PI * 2);
+    ctx.fill();
+    // 小铲子图案（提示可用铲子）
+    ctx.strokeStyle = 'rgba(80,55,25,0.6)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x + s * 0.42, y + s * 0.58);
+    ctx.lineTo(x + s * 0.58, y + s * 0.42);
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  // 铲子道具牌（与字牌同尺寸，棕色土底 + 铲子图案 + "铲"字）
+  R.shovelTile = function (ctx, x, y, s, opt) {
+    opt = opt || {};
+    ctx.save();
+    ctx.globalAlpha = opt.alpha != null ? opt.alpha : 1;
+    ctx.translate(x, y);
+    var half = s / 2;
+    var r = s * 0.14;
+    // 厚度
+    ctx.fillStyle = '#a08560';
+    R.roundRect(ctx, -half, -half + s * 0.06, s, s, r);
+    ctx.fill();
+    // 牌面（土黄底）
+    ctx.fillStyle = opt.flash ? '#ffd9cc' : '#d9b978';
+    R.roundRect(ctx, -half, -half, s, s * 0.94, r);
+    ctx.fill();
+    ctx.strokeStyle = opt.hl ? '#c9922e' : '#7a5a2a';
+    ctx.lineWidth = opt.hl ? 3 : 1.5;
+    R.roundRect(ctx, -half, -half, s, s * 0.94, r);
+    ctx.stroke();
+    // 铲子图案（木柄 + 金属铲头）
+    var sc = s * 0.5;
+    ctx.save();
+    ctx.translate(0, -s * 0.04);
+    // 木柄
+    ctx.strokeStyle = '#6a4220';
+    ctx.lineWidth = s * 0.07;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-sc * 0.35, sc * 0.5);
+    ctx.lineTo(sc * 0.35, -sc * 0.3);
+    ctx.stroke();
+    // 铲头（金属梯形）
+    ctx.fillStyle = '#c0c0c0';
+    ctx.strokeStyle = '#6a6a6a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(sc * 0.18, -sc * 0.18);
+    ctx.lineTo(sc * 0.52, -sc * 0.52);
+    ctx.lineTo(sc * 0.68, -sc * 0.36);
+    ctx.lineTo(sc * 0.34, -sc * 0.02);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+    // "铲"字（右下角小字标识）
+    ctx.fillStyle = '#3a2a1a';
+    R.font(ctx, s * 0.24, true);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('铲', half - s * 0.08, half - s * 0.06);
+    ctx.restore();
+  };
+
+  // 5 卡牌选择面板（征兵后弹出）
+  // cards: 卡牌数组；返回各卡牌的命中区域供点击判定
+  // cx, cy: 面板中心
+  R.cardPanel = function (ctx, cards, cx, cy, t) {
+    var n = cards.length;
+    var cardW = 96, cardH = 116, gap = 14;
+    var totalW = n * cardW + (n - 1) * gap;
+    var panelW = totalW + 80;
+    var panelH = cardH + 130;
+    var px = cx - panelW / 2, py = cy - panelH / 2;
+
+    var hit = [];
+
+    ctx.save();
+    // 半透明遮罩
+    ctx.fillStyle = 'rgba(20,16,12,0.55)';
+    ctx.fillRect(0, 0, A.DW, A.DH);
+    // 面板背景（卷轴风）
+    ctx.fillStyle = '#3a2a1a';
+    R.roundRect(ctx, px - 10, py - 10, panelW + 20, panelH + 20, 14);
+    ctx.fill();
+    ctx.fillStyle = '#f4ecd6';
+    R.roundRect(ctx, px, py, panelW, panelH, 10);
+    ctx.fill();
+    ctx.strokeStyle = '#7a5a2a';
+    ctx.lineWidth = 3;
+    R.roundRect(ctx, px, py, panelW, panelH, 10);
+    ctx.stroke();
+
+    // 标题
+    ctx.fillStyle = '#7a2a1a';
+    R.font(ctx, 32, true);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('征兵 · 选一字入席', cx, py + 32);
+
+    // 卡牌
+    var startX = cx - totalW / 2 + cardW / 2;
+    for (var i = 0; i < n; i++) {
+      var card = cards[i];
+      if (!card) continue;
+      var x = startX + i * (cardW + gap);
+      var y = py + 50 + cardH / 2;
+      // 呼吸高亮（轻微浮动）
+      var bob = Math.sin((t || 0) * 2 + i * 0.6) * 2;
+      // 命中区域
+      hit.push({ idx: i, x: x - cardW / 2, y: y - cardH / 2, w: cardW, h: cardH });
+
+      ctx.save();
+      ctx.translate(x, y + bob);
+      // 卡牌阴影
+      ctx.fillStyle = 'rgba(60,40,20,0.35)';
+      R.roundRect(ctx, -cardW / 2 + 3, -cardH / 2 + 5, cardW, cardH, 10);
+      ctx.fill();
+      // 卡牌底
+      var isShovel = card.kind === 'shovel';
+      var isFrag = card.kind === 'f';
+      var isGeneral = card.kind === 'g';
+      ctx.fillStyle = isShovel ? '#d9b978' : (isFrag || isGeneral ? '#fbe9b8' : '#f7f3e8');
+      R.roundRect(ctx, -cardW / 2, -cardH / 2, cardW, cardH, 10);
+      ctx.fill();
+      ctx.strokeStyle = isShovel ? '#7a5a2a' : (isFrag || isGeneral ? '#b8860b' : 'rgba(120,108,88,0.7)');
+      ctx.lineWidth = 2;
+      R.roundRect(ctx, -cardW / 2, -cardH / 2, cardW, cardH, 10);
+      ctx.stroke();
+      ctx.restore();
+
+      // 渲染卡牌内容（用 drawUnit 风格）
+      if (isShovel) {
+        R.shovelTile(ctx, x, y + bob, cardW - 14, { alpha: 1 });
+      } else {
+        // 士兵/碎片/武将：用 mahjong 风格
+        var opt = {};
+        if (card.kind === 's') opt.lv = card.lv;
+        if (card.kind === 'f') opt.gold = true;
+        if (card.kind === 'g') { opt.gold = true; opt.hl = true; }
+        var ch = card.kind === 'g' ? card.name : card.ch;
+        R.mahjong(ctx, x, y + bob, cardW - 14, ch, opt);
+      }
+    }
+
+    // 底部提示
+    ctx.fillStyle = '#5a4a34';
+    R.font(ctx, 22, true);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('点击一张卡牌放入备战席', cx, py + panelH - 26);
+
+    ctx.restore();
+    return hit;
+  };
+
   R.inside = function (b, x, y) {
     return b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
   };

@@ -78,9 +78,27 @@
       }
     }
 
-    // 5. 征兵
+    // 5. 征兵（新版返回 5 张卡牌，AI 自动挑一张最佳卡牌入席）
     if (S.mantou >= B().recruitCost(S) && S.bench.indexOf(null) >= 0) {
-      return B().recruit(S, false);
+      var cards = B().recruit(S, false);
+      if (!cards || !cards.length) return false;
+      // AI 选卡策略：碎片 > 武将 > 士兵 > 铲子（AI 不会用铲子）
+      var pick = -1;
+      var order = { 'f': 0, 'g': 1, 's': 2, 'shovel': 3 };
+      var bestOrder = 99;
+      for (var ci = 0; ci < cards.length; ci++) {
+        var k = cards[ci].kind;
+        var ord = order[k] != null ? order[k] : 9;
+        if (ord < bestOrder) { bestOrder = ord; pick = ci; }
+      }
+      if (pick < 0) pick = 0;
+      // 铲子对 AI 无用，转挑第一张非铲子卡
+      if (cards[pick].kind === 'shovel') {
+        for (var ci2 = 0; ci2 < cards.length; ci2++) {
+          if (cards[ci2].kind !== 'shovel') { pick = ci2; break; }
+        }
+      }
+      return B().pickCard(S, cards, pick);
     }
     return false;
   };

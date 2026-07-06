@@ -48,7 +48,7 @@
       var g = C.GENERALS[u.name];
       return { dmg: g.dmg, itv: g.itv, range: g.range, skill: g.skill, general: true };
     }
-    return { inert: true }; // 碎片不能作战
+    return { inert: true }; // 碎片/铲子不能作战
   };
 
   // ---- 征兵 ----
@@ -63,39 +63,87 @@
     return own;
   }
 
+  // 制造铲子道具
+  B.makeShovel = function () {
+    return { kind: 'shovel', ch: '铲', cd: 0 };
+  };
+
+  // 抽一张卡牌（按权重）：士兵/碎片/铲子
+  function rollOneCard(S) {
+    var roll = Math.random() * 100;
+    var acc = 0;
+    for (var i = 0; i < C.RECRUIT_POOL.length; i++) {
+      acc += C.RECRUIT_POOL[i].w;
+      if (roll < acc) {
+        var kind = C.RECRUIT_POOL[i].kind;
+        if (kind === 's') {
+          var ch = C.SOLDIER_CHARS[(Math.random() * C.SOLDIER_CHARS.length) | 0];
+          return B.makeSoldier(ch, 1);
+        } else if (kind === 'shovel') {
+          return B.makeShovel();
+        } else {
+          // 碎片：优先补全已有单字
+          var own = ownedFragChars(S);
+          var wants = [];
+          for (var oc in own) {
+            var pair = C.FRAG_MAP[oc][1];
+            if (!own[pair]) wants.push(pair);
+          }
+          var fc = (wants.length && Math.random() < 0.65)
+            ? wants[(Math.random() * wants.length) | 0]
+            : C.FRAG_CHARS[(Math.random() * C.FRAG_CHARS.length) | 0];
+          return B.makeFrag(fc);
+        }
+      }
+    }
+    return B.makeSoldier(C.SOLDIER_CHARS[0], 1);
+  }
+
+  // 征兵：抽 5 张卡牌供玩家选择（原版机制）
+  // 返回卡牌数组，由 UI 层展示供玩家选择
   B.recruit = function (S, sideIsPlayer) {
     var cost = B.recruitCost(S);
     if (S.mantou < cost) {
       if (sideIsPlayer) ZY.UI.toast('馒头不足');
       return false;
     }
-    var slot = S.bench.indexOf(null);
-    if (slot < 0) {
-      if (sideIsPlayer) ZY.UI.toast('备战席已满');
-      return false;
-    }
+    // 备战席是否还有空位（如果完全满了仍允许抽卡，但选择时需提示）
     S.mantou -= cost;
     S.recruitCount++;
-    var roll = Math.random() * 100;
-    var unit;
-    if (roll < C.RECRUIT_POOL[0].w) {
-      var ch = C.SOLDIER_CHARS[(Math.random() * C.SOLDIER_CHARS.length) | 0];
-      unit = B.makeSoldier(ch, 1);
-    } else {
-      // 碎片：优先补全已有单字
-      var own = ownedFragChars(S);
-      var wants = [];
-      for (var oc in own) {
-        var pair = C.FRAG_MAP[oc][1];
-        if (!own[pair]) wants.push(pair);
-      }
-      var fc = (wants.length && Math.random() < 0.65)
-        ? wants[(Math.random() * wants.length) | 0]
-        : C.FRAG_CHARS[(Math.random() * C.FRAG_CHARS.length) | 0];
-      unit = B.makeFrag(fc);
+    // 抽 5 张卡牌
+    var cards = [];
+    for (var i = 0; i < C.RECRUIT_DRAW_COUNT; i++) {
+      cards.push(rollOneCard(S));
     }
-    S.bench[slot] = unit;
     if (sideIsPlayer) ZY.sfx('coin');
+    return cards; // 返回卡牌数组，由调用方处理选择
+  };
+
+  // 玩家从抽卡面板选择一张卡牌放入备战席指定位置
+  // cardIdx: 选中的卡牌索引；返回 true 表示成功放入
+  B.pickCard = function (S, cards, cardIdx) {
+    var slot = S.bench.indexOf(null);
+    if (slot < 0) {
+      ZY.UI.toast('备战席已满');
+      return false;
+    }
+    var card = cards[cardIdx];
+    if (!card) return false;
+    S.bench[slot] = card;
+    cards.splice(cardIdx, 1); // 从卡牌池移除
+    return true;
+  };
+
+  // 使用铲子解锁格子（铲子模式）
+  B.useShovel = function (S, c, r) {
+    var Map = M_();
+    if (!Map.isUnlockable(c, r, 'p')) {
+      ZY.UI.toast('该格不可解锁');
+      return false;
+    }
+    Map.unlockCell(c, r, 'p');
+    ZY.UI.toast('已解锁新空地！');
+    ZY.sfx('merge');
     return true;
   };
 
@@ -281,6 +329,24 @@
     var ck = cell ? key(cell.c, cell.r) : null;
     var isBuild = ck && Map.cellType[ck] === 'build_p';
 
+    // 铲子特殊处理：拖到 unlockable_p 格解锁，否则返回备战席
+    if (d.unit.kind === 'shovel') {
+      var cellAny = Map.cellAt(x, y);
+      if (cellAny) {
+        var uk = key(cellAny.c, cellAny.r);
+        if (Map.cellType[uk] === 'unlockable_p') {
+          if (B.useShovel(S, cellAny.c, cellAny.r)) {
+            // 消耗铲子
+            if (d.from.type === 'bench') S.bench[d.from.idx] = null;
+            else delete S.units[d.from.key];
+            return true;
+          }
+        }
+      }
+      // 铲子不能放在普通建造格，返回原位
+      return true;
+    }
+
     // 从备战席拖出
     if (d.from.type === 'bench') {
       // 拖回备战席（换位）
@@ -435,6 +501,12 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(ch, x, y - size * 0.02);
+      ctx.restore();
+    } else if (u.kind === 'shovel') {
+      // 铲子道具：用专门渲染
+      ctx.save();
+      ctx.globalAlpha = alpha != null ? alpha : 1;
+      R.shovelTile(ctx, x, y, size, {});
       ctx.restore();
     } else if (u.kind === 'g') {
       // 旧式整武将（兼容）：双字竖排

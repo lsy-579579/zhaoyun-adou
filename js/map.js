@@ -34,7 +34,9 @@
   M.spawnOf = function (side) { return M.pathOf(side)[0]; };
   M.adouOf = function (side) { return M.pathOf(side)[M.pathOf(side).length - 1]; };
 
-  M.cellType = {}; // key -> 'path' | 'build_p' | 'build_e' | 'block'
+  M.cellType = {}; // key -> 'path' | 'build_p' | 'build_e' | 'block' | 'unlockable_p' | 'unlockable_e'
+  // 可解锁格集合（玩家侧 + 对手侧）
+  M.unlockable = {}; // key -> true（可解锁但未解锁）
   function markAll() {
     for (var c = 0; c < M.COLS; c++)
       for (var r = 0; r < M.ROWS; r++)
@@ -42,8 +44,47 @@
     P_PATH.concat(E_PATH).forEach(function (p) { M.cellType[key(p[0], p[1])] = 'path'; });
     P_BUILD.forEach(function (p) { M.cellType[key(p[0], p[1])] = 'build_p'; });
     E_BUILD.forEach(function (p) { M.cellType[key(p[0], p[1])] = 'build_e'; });
+    // 可解锁格（铲子目标）
+    if (ZY.C && ZY.C.SHOVEL_UNLOCK_P) {
+      ZY.C.SHOVEL_UNLOCK_P.forEach(function (p) {
+        var k = key(p[0], p[1]);
+        if (M.cellType[k] === 'block') {
+          M.cellType[k] = 'unlockable_p';
+          M.unlockable[k] = true;
+        }
+      });
+      // 对手侧镜像（暂不使用，AI 不会用铲子）
+      ZY.C.SHOVEL_UNLOCK_P.forEach(function (p) {
+        var ek = key(M.COLS - 1 - p[0], M.ROWS - 1 - p[1]);
+        if (M.cellType[ek] === 'block') {
+          M.cellType[ek] = 'unlockable_e';
+        }
+      });
+    }
   }
-  markAll();
+  // 注意：markAll 在 config.js 加载后才执行，这里先注册一个延迟初始化
+  M.ensureMarked = function () { if (!M._marked) { markAll(); M._marked = true; } };
+
+  // 每局重置：重新标记所有格子（已解锁的 build_p 会变回 unlockable_p）
+  M.resetUnlockable = function () {
+    M._marked = false;
+    M.unlockable = {};
+    markAll();
+    M._marked = true;
+  };
+
+  // 铲子解锁：将 unlockable_p 格转为 build_p
+  M.unlockCell = function (c, r, side) {
+    var k = key(c, r);
+    var target = 'unlockable_' + side;
+    if (M.cellType[k] !== target) return false;
+    M.cellType[k] = 'build_' + side;
+    delete M.unlockable[k];
+    return true;
+  };
+  M.isUnlockable = function (c, r, side) {
+    return M.cellType[key(c, r)] === 'unlockable_' + side;
+  };
 
   // 像素坐标换算（依赖 ZY.L 布局，在 main.js 计算后可用）
   M.cellCenter = function (c, r) {
