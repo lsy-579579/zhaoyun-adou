@@ -58,6 +58,8 @@
     ZY.Board.eachUnit(S, function (u, c, r) {
       var st = ZY.unitStats(u);
       if (st.inert) return;
+      // 武将半身：只让 half=0 发起攻击，避免双倍伤害
+      if (u.kind === 'g' && u.half != null && u.half !== 0) return;
       if (u.attackT > 0) u.attackT -= dt; // 攻击变形动画计时
       u.cd -= dt;
       if (u.cd > 0) return;

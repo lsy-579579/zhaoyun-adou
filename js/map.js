@@ -56,10 +56,34 @@
 
   M.cellAt = function (x, y) {
     var L = ZY.L;
+    // 增加容差：格子边缘附近也判定为该格（避免"放到位了还判定返回"）
     var c = Math.floor((x - L.mapX) / L.cell);
     var r = Math.floor((y - L.mapY) / L.cell);
     if (c < 0 || c >= M.COLS || r < 0 || r >= M.ROWS) return null;
     return { c: c, r: r };
+  };
+
+  // 带容差的建造格判定：返回最近的 build 格（在判定半径内）
+  M.buildCellAt = function (x, y, side) {
+    var L = ZY.L;
+    var c = Math.floor((x - L.mapX) / L.cell);
+    var r = Math.floor((y - L.mapY) / L.cell);
+    // 优先检查当前格
+    var candidates = [[c,r],[c-1,r],[c+1,r],[c,r-1],[c,r+1]];
+    var best = null, bestDist = Infinity;
+    var tolerance = L.cell * 0.45; // 容差半径
+    for (var i = 0; i < candidates.length; i++) {
+      var cc = candidates[i][0], rr = candidates[i][1];
+      var k = cc + '_' + rr;
+      if (M.cellType[k] !== 'build_' + side) continue;
+      var center = M.cellCenter(cc, rr);
+      var d = Math.hypot(x - center.x, y - center.y);
+      if (d < tolerance && d < bestDist) {
+        best = { c: cc, r: rr };
+        bestDist = d;
+      }
+    }
+    return best;
   };
 
   // 路径像素点序列（供敌人行进插值）
