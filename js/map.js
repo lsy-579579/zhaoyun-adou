@@ -1,0 +1,71 @@
+// 地图：8列×10行，上半场为对手(AI)，下半场为玩家，中央山脊分隔
+// 每侧一条 S 形土路：刷怪丛 → 蜿蜒小路 → 阿斗
+(function () {
+  var root = (typeof GameGlobal !== 'undefined') ? GameGlobal
+    : (typeof window !== 'undefined') ? window : globalThis;
+  var ZY = root.ZY = root.ZY || {};
+
+  var M = {};
+  M.COLS = 8;
+  M.ROWS = 10;
+
+  // 玩家侧（下半场 5~9 行）：刷怪丛(0,9) → 沿9行向右 → 3列向上 → 沿7行向右 → 6列向下 → 阿斗(7,9)
+  var P_PATH = [
+    [0, 9], [1, 9], [2, 9], [3, 9],
+    [3, 8], [3, 7],
+    [4, 7], [5, 7], [6, 7],
+    [6, 8], [6, 9],
+    [7, 9]
+  ];
+  // 对手侧＝180°镜像
+  var E_PATH = P_PATH.map(function (p) { return [M.COLS - 1 - p[0], M.ROWS - 1 - p[1]]; });
+
+  // 玩家可建造白格（路旁空地）
+  var P_BUILD = [
+    [1, 8], [2, 8], [4, 8], [5, 8],
+    [1, 6], [2, 6], [4, 6], [5, 6]
+  ];
+  var E_BUILD = P_BUILD.map(function (p) { return [M.COLS - 1 - p[0], M.ROWS - 1 - p[1]]; });
+
+  function key(c, r) { return c + '_' + r; }
+
+  M.pathOf = function (side) { return side === 'p' ? P_PATH : E_PATH; };
+  M.buildOf = function (side) { return side === 'p' ? P_BUILD : E_BUILD; };
+  M.spawnOf = function (side) { return M.pathOf(side)[0]; };
+  M.adouOf = function (side) { return M.pathOf(side)[M.pathOf(side).length - 1]; };
+
+  M.cellType = {}; // key -> 'path' | 'build_p' | 'build_e' | 'block'
+  function markAll() {
+    for (var c = 0; c < M.COLS; c++)
+      for (var r = 0; r < M.ROWS; r++)
+        M.cellType[key(c, r)] = 'block';
+    P_PATH.concat(E_PATH).forEach(function (p) { M.cellType[key(p[0], p[1])] = 'path'; });
+    P_BUILD.forEach(function (p) { M.cellType[key(p[0], p[1])] = 'build_p'; });
+    E_BUILD.forEach(function (p) { M.cellType[key(p[0], p[1])] = 'build_e'; });
+  }
+  markAll();
+
+  // 像素坐标换算（依赖 ZY.L 布局，在 main.js 计算后可用）
+  M.cellCenter = function (c, r) {
+    var L = ZY.L;
+    return {
+      x: L.mapX + c * L.cell + L.cell / 2,
+      y: L.mapY + r * L.cell + L.cell / 2
+    };
+  };
+
+  M.cellAt = function (x, y) {
+    var L = ZY.L;
+    var c = Math.floor((x - L.mapX) / L.cell);
+    var r = Math.floor((y - L.mapY) / L.cell);
+    if (c < 0 || c >= M.COLS || r < 0 || r >= M.ROWS) return null;
+    return { c: c, r: r };
+  };
+
+  // 路径像素点序列（供敌人行进插值）
+  M.pathPoints = function (side) {
+    return M.pathOf(side).map(function (p) { return M.cellCenter(p[0], p[1]); });
+  };
+
+  ZY.Map = M;
+})();

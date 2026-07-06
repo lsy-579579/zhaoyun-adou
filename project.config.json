@@ -1,0 +1,16 @@
+{
+  "description": "赵云与阿斗 - 文字合成策略塔防（微信小游戏）",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": false,
+    "minified": true,
+    "ignoreUploadUnusedFiles": true
+  },
+  "compileType": "game",
+  "libVersion": "latest",
+  "appid": "touristappid",
+  "projectname": "zhaoyun-adou",
+  "condition": {}
+}
