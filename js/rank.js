@@ -9,13 +9,18 @@
 
   function load() {
     var raw = A.storageGet(KEY);
-    if (!raw) return { rank: 0, stars: 0 };
+    if (!raw) { var d0 = { rank: 0, stars: 0 }; d0.rankName = getRankName(d0); return d0; }
     try {
       var d = JSON.parse(raw);
       if (typeof d.rank !== 'number') d.rank = 0;
       if (typeof d.stars !== 'number') d.stars = 0;
+      d.rankName = getRankName(d);
       return d;
-    } catch (e) { return { rank: 0, stars: 0 }; }
+    } catch (e) {
+      var de = { rank: 0, stars: 0 };
+      de.rankName = getRankName(de);
+      return de;
+    }
   }
 
   function save(d) { A.storageSet(KEY, JSON.stringify(d)); }
