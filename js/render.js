@@ -302,6 +302,121 @@
     ctx.restore();
   };
 
+  // 水墨光晕（武将/僧牌背后的墨晕，呼吸缩放）
+  R.inkHalo = function (ctx, x, y, s, t, color) {
+    ctx.save();
+    ctx.translate(x, y);
+    var pulse = 1 + Math.sin(t * 2.2) * 0.06; // 呼吸缩放
+    var alpha = 0.22 + Math.sin(t * 2.2) * 0.06;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color || '#3a3126';
+    ctx.scale(pulse, pulse);
+    ctx.beginPath();
+    // 不规则墨晕轮廓
+    var pts = 14;
+    for (var i = 0; i <= pts; i++) {
+      var a = i / pts * Math.PI * 2;
+      var noise = 1 + Math.sin(a * 3 + t * 0.8) * 0.18 + Math.cos(a * 5 - t * 0.6) * 0.1;
+      var rx = Math.cos(a) * s * 0.95 * noise;
+      var ry = Math.sin(a) * s * 0.95 * noise;
+      if (i === 0) ctx.moveTo(rx, ry); else ctx.lineTo(rx, ry);
+    }
+    ctx.closePath();
+    ctx.filter = 'blur(4px)';
+    ctx.fill();
+    ctx.filter = 'none';
+    ctx.restore();
+  };
+
+  // 呼吸跳动的文字牌（参考原版：方块字会上下跳动 + 水墨晕）
+  // ch：单字或两字；kind：'general'(武将) | 'monk'(僧)
+  R.livingTile = function (ctx, x, y, s, ch, kind, t) {
+    ctx.save();
+    // 跳动位移（小幅上下浮动，节奏 ~1.6s）
+    var bob = Math.sin(t * (Math.PI * 2 / 1.6)) * s * 0.04;
+    // 微旋转摆动（字体"活过来"的感觉）
+    var sway = Math.sin(t * 1.7) * 0.04;
+    ctx.translate(x, y + bob);
+    ctx.rotate(sway);
+    // 水墨光晕
+    R.inkHalo(ctx, 0, 0, s, t, kind === 'monk' ? '#5a4a34' : '#3a3126');
+    // 牌面
+    var half = s / 2;
+    var r = s * 0.16;
+    // 立体厚度
+    ctx.fillStyle = '#b9ac92';
+    R.roundRect(ctx, -half, -half + s * 0.08, s, s, r);
+    ctx.fill();
+    // 牌面底色（武将金、僧人米白）
+    ctx.fillStyle = kind === 'monk' ? '#f4ecd6' : '#fbe9b8';
+    R.roundRect(ctx, -half, -half, s, s * 0.92, r);
+    ctx.fill();
+    // 金边 / 棕边
+    ctx.strokeStyle = kind === 'monk' ? '#6a5138' : '#b8860b';
+    ctx.lineWidth = kind === 'monk' ? 2 : 3;
+    R.roundRect(ctx, -half, -half, s, s * 0.92, r);
+    ctx.stroke();
+    // 文字
+    ctx.fillStyle = kind === 'monk' ? '#3a2a1a' : '#7a2a1a';
+    if (ch.length === 1) {
+      R.font(ctx, s * 0.6, true);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ch, 0, -s * 0.04);
+    } else {
+      // 两字竖排
+      R.font(ctx, s * 0.4, true);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(ch[0], 0, -s * 0.22);
+      ctx.fillText(ch[1], 0, s * 0.22);
+    }
+    ctx.restore();
+  };
+
+  // 僧（替代阿斗）：跳动的"僧"字牌 + 头顶金箍 + 红心
+  R.monk = function (ctx, x, y, s, hearts, maxHearts, shake, t) {
+    ctx.save();
+    if (shake) ctx.translate((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 4);
+    // 红心排
+    for (var i = 0; i < maxHearts; i++) {
+      R.heart(ctx, x - (maxHearts - 1) * s * 0.19 + i * s * 0.38, y - s * 0.82, s * 0.3, i < hearts);
+    }
+    // 呼吸跳动的僧字牌
+    R.livingTile(ctx, x, y, s, '僧', 'monk', t);
+    // 金箍（替代金冠）
+    R.goldRing(ctx, x, y - s * 0.52, s * 0.5, t);
+    ctx.restore();
+  };
+
+  // 金箍（孙悟空头上的紧箍咒，带光泽）
+  R.goldRing = function (ctx, x, y, s, t) {
+    ctx.save();
+    ctx.translate(x, y);
+    // 呼吸微缩
+    var pulse = 1 + Math.sin(t * 2.2) * 0.04;
+    ctx.scale(pulse, pulse);
+    // 金箍主体（椭圆环）
+    ctx.strokeStyle = '#d4a017';
+    ctx.lineWidth = s * 0.12;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s * 0.55, s * 0.22, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    // 高光
+    ctx.strokeStyle = '#fce58a';
+    ctx.lineWidth = s * 0.04;
+    ctx.beginPath();
+    ctx.ellipse(0, -s * 0.02, s * 0.5, s * 0.18, 0, Math.PI * 1.1, Math.PI * 1.9);
+    ctx.stroke();
+    // 中央红宝石
+    ctx.fillStyle = '#c9302a';
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#8a6a10';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+  };
+
   // 馒头图标
   R.bun = function (ctx, x, y, s) {
     ctx.save();

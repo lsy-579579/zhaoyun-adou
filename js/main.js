@@ -214,10 +214,13 @@
 
   // ---- 主循环 ----
   var lastT = 0;
+  var frameTime = 0; // 全局动画时间（秒），供 UI 呼吸/水墨等动画使用
+  ZY.frameTime = function () { return frameTime; };
   function frame(now) {
     if (!lastT) lastT = now;
     var dt = Math.min((now - lastT) / 1000, 0.05);
     lastT = now;
+    frameTime += dt;
     var G = ZY.G;
     var ctx = A.ctx;
     if (ctx) {

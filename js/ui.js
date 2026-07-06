@@ -98,6 +98,7 @@
     // 中央装饰阵盘
     ctx.save();
     var by = DH * 0.46, bw = 440, bh = 170;
+    var t = ZY.frameTime ? ZY.frameTime() : 0;
     ctx.translate(DW / 2, by);
     ctx.transform(1, 0, -0.28, 0.82, 0, 0); // 透视斜切
     ctx.fillStyle = '#f2eee0';
@@ -124,25 +125,41 @@
       ctx.stroke();
     }
     ctx.restore();
-    R.adou(ctx, DW / 2, by - 26, 92, 3, 3, false);
-    // 长枪斜插 + 赵云题字
+    // 僧字牌（替代阿斗）：呼吸跳动 + 水墨晕 + 金箍 + 红心
+    R.monk(ctx, DW / 2, by - 26, 92, 3, 3, false, t);
+    // 金箍棒斜插 + 悟空题字（替代长枪+赵云）
     ctx.save();
-    ctx.strokeStyle = '#4a3426';
-    ctx.lineWidth = 7;
+    // 金箍棒棒身（金色渐变）
+    ctx.strokeStyle = '#d4a017';
+    ctx.lineWidth = 8;
+    ctx.lineCap = 'round';
     ctx.beginPath();
     ctx.moveTo(DW / 2 + 26, by - 96);
     ctx.lineTo(DW / 2 - 60, by + 108);
     ctx.stroke();
-    ctx.fillStyle = '#b8b4ac';
+    // 棒身花纹
+    ctx.strokeStyle = '#8a6a10';
+    ctx.lineWidth = 2;
+    for (var bi = 0; bi < 6; bi++) {
+      var ratio = bi / 5;
+      var bx1 = DW / 2 + 26 + (DW / 2 - 60 - (DW / 2 + 26)) * ratio;
+      var by1 = by - 96 + (by + 108 - (by - 96)) * ratio;
+      ctx.beginPath();
+      ctx.arc(bx1, by1, 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    // 金箍棒两端（金箍）
+    ctx.fillStyle = '#e8c53a';
+    ctx.strokeStyle = '#8a6a10';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(DW / 2 + 26, by - 96);
-    ctx.lineTo(DW / 2 + 44, by - 128);
-    ctx.lineTo(DW / 2 + 8, by - 112);
-    ctx.closePath(); ctx.fill();
-    R.font(ctx, 64, true);
-    ctx.fillStyle = '#a8402c';
-    ctx.textAlign = 'center';
-    ctx.fillText('赵云', DW / 2 - 110, by + 96);
+    ctx.arc(DW / 2 + 26, by - 96, 10, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(DW / 2 - 60, by + 108, 10, 0, Math.PI * 2);
+    ctx.fill(); ctx.stroke();
+    // 悟空题字（呼吸跳动的水墨字牌）
+    R.livingTile(ctx, DW / 2 - 110, by + 96, 78, '悟空', 'general', t);
     ctx.restore();
 
     // 开始按钮
