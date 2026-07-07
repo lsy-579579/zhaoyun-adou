@@ -33,8 +33,8 @@
   B.makeSoldier = function (ch, lv) {
     return { kind: 's', ch: ch, lv: lv || 1, cd: 0 };
   };
-  B.makeFrag = function (ch) {
-    return { kind: 'f', ch: ch, cd: 0 };
+  B.makeFrag = function (ch, lv) {
+    return { kind: 'f', ch: ch, cd: 0, lv: lv || 0 }; // lv: 携带的武将等级（0表示普通碎片）
   };
   B.makeGeneral = function (name) {
     return { kind: 'g', name: name, ch: name, cd: 0 };
@@ -209,33 +209,37 @@
 
   // 在 placeKey 放置碎片 fragCh，尝试与相邻碎片合成武将（分两格）
   // 成功返回 true（已合成），失败返回 false（应走普通放置）
-  function tryFormGeneralAdjacent(S, side, placeKey, placeCh, isPlayer) {
+  // placeLv: 放置碎片携带的武将等级（用于保留等级，可选）
+  function tryFormGeneralAdjacent(S, side, placeKey, placeCh, isPlayer, placeLv) {
     var cr = placeKey.split('_');
     var c = +cr[0], r = +cr[1];
     var found = findAdjFragPair(S, side, c, r, placeCh);
     if (!found) return false;
     // 保持各自原有的字在原位，按名字首字决定 half（首字=half 0）
     var pair = found.pair;
-    var neighborCh = S.units[found.neighborKey].ch;
+    var neighborU = S.units[found.neighborKey];
+    var neighborCh = neighborU.ch;
     var firstChar = pair.name[0];
     var neighborHalf = (neighborCh === firstChar) ? 0 : 1;
     var placeHalf = (placeCh === firstChar) ? 0 : 1;
-    S.units[found.neighborKey] = B.makeGeneralHalf(pair.name, neighborCh, neighborHalf, placeKey);
-    S.units[placeKey] = B.makeGeneralHalf(pair.name, placeCh, placeHalf, found.neighborKey);
+    // 合成时保留等级：取放置碎片与邻居碎片携带等级的最大值（重新合成武将不丢等级）
+    var keepLv = Math.max(placeLv || 0, neighborU.lv || 0, 1);
+    S.units[found.neighborKey] = B.makeGeneralHalf(pair.name, neighborCh, neighborHalf, placeKey, keepLv);
+    S.units[placeKey] = B.makeGeneralHalf(pair.name, placeCh, placeHalf, found.neighborKey, keepLv);
     var p = M_().cellCenter(c, r);
     afterMerge(S, S.units[placeKey], p.x, p.y, isPlayer);
     return true;
   }
   B.tryFormGeneralAdjacent = tryFormGeneralAdjacent;
 
-  // 移除一个半身时，另一半变回碎片
+  // 移除一个半身时，另一半变回碎片（保留武将等级到碎片上）
   function unlinkGeneral(S, halfKey) {
     var u = S.units[halfKey];
     if (!u || u.kind !== 'g' || u.half == null) return;
     var pk = u.pairedKey;
     if (pk && S.units[pk] && S.units[pk].kind === 'g' && S.units[pk].name === u.name) {
-      // 另一半变回碎片
-      S.units[pk] = B.makeFrag(S.units[pk].ch);
+      // 另一半变回碎片，携带武将等级
+      S.units[pk] = B.makeFrag(S.units[pk].ch, S.units[pk].lv || 1);
     }
   }
   B.unlinkGeneral = unlinkGeneral;
@@ -299,7 +303,7 @@
     if (!target) {
       // 空格：若是碎片，尝试与相邻碎片合成武将
       if (u.kind === 'f') {
-        if (tryFormGeneralAdjacent(S, side, ck, u.ch, side === 'p')) {
+        if (tryFormGeneralAdjacent(S, side, ck, u.ch, side === 'p', u.lv)) {
           S.bench[benchIdx] = null;
           return true;
         }
@@ -398,8 +402,10 @@
       if (drag.wasHalf && !drag.split) {
         var S = ZY.G.p;
         var pairU = S.units[drag.pairKey];
-        S.units[drag.pairKey] = B.makeFrag(pairU.ch);
-        drag.unit = B.makeFrag(drag.unit.ch);
+        var keepLv = (drag.unit.lv || 1);
+        // 拆分时保留武将等级到两个碎片上，便于再次合成时恢复
+        S.units[drag.pairKey] = B.makeFrag(pairU.ch, keepLv);
+        drag.unit = B.makeFrag(drag.unit.ch, keepLv);
         delete S.units[drag.from.key];
         drag.split = true;
       }
@@ -475,7 +481,7 @@
         // 空格放置
         if (!target) {
           // 碎片：尝试与相邻碎片合成武将（分两格）
-          if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true)) {
+          if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true, d.unit.lv)) {
             S.bench[d.from.idx] = null;
             ZY.sfx('click');
             return true;
@@ -504,7 +510,7 @@
           S.units[ck] = d.unit;
           S.bench[d.from.idx] = target;
           // 交换后放置到格子的碎片检查是否触发武将合成
-          if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true)) {
+          if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true, d.unit.lv)) {
             return true;
           }
         }
@@ -539,7 +545,7 @@
       var t2 = S.units[ck];
       // 目标格为空：移动（若是碎片，尝试相邻合成武将）
       if (!t2) {
-        if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true)) {
+        if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true, d.unit.lv)) {
           delete S.units[d.from.key];
           ZY.sfx('click');
           return true;
@@ -560,10 +566,10 @@
       S.units[d.from.key] = t2;
       S.units[ck] = d.unit;
       // 交换后检查是否触发武将合成（按姓名顺序：首字左、尾字右）
-      if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true)) {
+      if (d.unit.kind === 'f' && tryFormGeneralAdjacent(S, 'p', ck, d.unit.ch, true, d.unit.lv)) {
         return true;
       }
-      if (t2.kind === 'f' && tryFormGeneralAdjacent(S, 'p', d.from.key, t2.ch, true)) {
+      if (t2.kind === 'f' && tryFormGeneralAdjacent(S, 'p', d.from.key, t2.ch, true, t2.lv)) {
         return true;
       }
       return true;
