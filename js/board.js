@@ -46,7 +46,12 @@
     }
     if (u.kind === 'g') {
       var g = C.GENERALS[u.name];
-      return { dmg: g.dmg, itv: g.itv, range: g.range, skill: g.skill, general: true };
+      var glv = u.lv || 1;
+      return {
+        dmg: Math.round(g.dmg * C.GEN_LV_DMG_MUL(glv)),
+        itv: g.itv * C.GEN_LV_ITV_MUL(glv),
+        range: g.range, skill: g.skill, general: true, lv: glv
+      };
     }
     return { inert: true }; // 碎片/铲子不能作战
   };
@@ -146,10 +151,15 @@
     return null;
   };
 
-  // 武将半身制造
-  B.makeGeneralHalf = function (name, ch, half, pairedKey) {
-    return { kind: 'g', name: name, ch: ch, half: half, pairedKey: pairedKey, cd: 0, attackT: 0 };
+  // 武将半身制造（lv: 武将等级 1~5，影响伤害和攻击速度）
+  B.makeGeneralHalf = function (name, ch, half, pairedKey, lv) {
+    return { kind: 'g', name: name, ch: ch, half: half, pairedKey: pairedKey, lv: lv || 1, cd: 0, attackT: 0 };
   };
+
+  // 武将升级倍率（每级伤害×1.5，攻击间隔×0.85）
+  C.GEN_LV_DMG_MUL = function (lv) { return Math.pow(1.5, lv - 1); };
+  C.GEN_LV_ITV_MUL = function (lv) { return Math.pow(0.85, lv - 1); };
+  C.GEN_MAX_LV = 5;
 
   // 检查 (c,r) 的四连通相邻 build 格是否有配对碎片
   // 返回 { neighborKey, pair } 或 null
@@ -243,6 +253,41 @@
   }
   B.unlinkGeneral = unlinkGeneral;
 
+  // 武将升级：拖入同字碎片到武将半身上，武将等级+1（最高 C.GEN_MAX_LV）
+  // 检查碎片 ch 是否属于该武将的名字组成
+  function fragBelongsToGeneral(fragCh, generalName) {
+    return generalName.indexOf(fragCh) >= 0;
+  }
+
+  // 尝试升级武将：d.unit 是碎片，target 是武将半身
+  // 成功返回 true，失败返回 false
+  function tryUpgradeGeneral(S, d, targetKey) {
+    var target = S.units[targetKey];
+    if (!target || target.kind !== 'g' || target.half == null) return false;
+    if (d.unit.kind !== 'f') return false;
+    if (!fragBelongsToGeneral(d.unit.ch, target.name)) return false;
+    if ((target.lv || 1) >= C.GEN_MAX_LV) {
+      ZY.UI.toast(target.name + '已满级');
+      return false;
+    }
+    var newLv = (target.lv || 1) + 1;
+    // 两半同步升级
+    target.lv = newLv;
+    var pk = target.pairedKey;
+    if (pk && S.units[pk] && S.units[pk].kind === 'g') S.units[pk].lv = newLv;
+    // 消耗碎片
+    if (d.from.type === 'bench') S.bench[d.from.idx] = null;
+    else delete S.units[d.from.key];
+    var cr = targetKey.split('_');
+    var p = M_().cellCenter(+cr[0], +cr[1]);
+    ZY.Battle.fx('summon', p.x, p.y);
+    ZY.Battle.fx('text', p.x, p.y - 70, target.name + ' Lv.' + newLv + '！', '#b8860b');
+    ZY.sfx('summon');
+    ZY.adapter.vibrate();
+    return true;
+  }
+  B.tryUpgradeGeneral = tryUpgradeGeneral;
+
   function afterMerge(S, merged, x, y, isPlayer) {
     if (merged.kind === 'g') {
       ZY.Battle.fx('summon', x, y);
@@ -324,6 +369,8 @@
     var S = G.p;
     var bi = benchSlotAt(x, y);
     if (bi >= 0 && S.bench[bi]) {
+      // 武将半身不可从备战席拾取（理论上备战席不会有半身，保险起见）
+      if (S.bench[bi].kind === 'g' && S.bench[bi].half != null) return false;
       drag = { from: { type: 'bench', idx: bi }, unit: S.bench[bi], x: x, y: y };
       return true;
     }
@@ -331,6 +378,8 @@
     if (cell) {
       var k = key(cell.c, cell.r);
       if (Map.cellType[k] === 'build_p' && S.units[k]) {
+        // 武将半身禁止拾取拖动（锁定，只能就地升级或拆除）
+        if (S.units[k].kind === 'g' && S.units[k].half != null) return false;
         drag = { from: { type: 'cell', key: k }, unit: S.units[k], x: x, y: y };
         return true;
       }
@@ -433,6 +482,10 @@
             }
           }
         }
+        // 武将升级：拖同字碎片到武将半身上，等级+1
+        if (d.unit.kind === 'f' && target.kind === 'g' && target.half != null) {
+          if (tryUpgradeGeneral(S, d, ck)) return true;
+        }
         // 目标格有单位：兵种可二合一升级
         var merged = B.tryMerge(d.unit, target);
         if (merged) {
@@ -519,6 +572,10 @@
           }
         }
       }
+      // 武将升级：拖同字碎片到武将半身上，等级+1
+      if (d.unit.kind === 'f' && t2.kind === 'g' && t2.half != null) {
+        if (tryUpgradeGeneral(S, d, ck)) return true;
+      }
       // 目标格有单位：兵种二合一升级
       if (B.mergeOnBoard(S, 'p', d.from.key, ck)) {
         return true;
@@ -593,6 +650,14 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(ch, x, y - size * 0.02);
+      // 等级标识（Lv.2 起在左上角显示）
+      if ((u.lv || 1) > 1) {
+        ctx.fillStyle = '#b8860b';
+        R.font(ctx, size * 0.2, true);
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Lv' + u.lv, x - size / 2 + 4, y - size / 2 + 2);
+      }
       ctx.restore();
     } else if (u.kind === 'shovel') {
       // 铲子道具：用专门渲染
