@@ -65,7 +65,7 @@
     waveBonus: function (w) { return 8 + w * 2; }
   };
 
-  C.LEVEL_NAME = '长坂坡';
+  C.LEVEL_NAME = '火焰山';
   C.MAX_WAVE = 10; // 撑过即判定胜利（若对手先失守则提前胜利）
 
   // 玩家段位（11 级）：每级 5 阶（一~五），每阶满 5 星后再通关一次升下一阶
