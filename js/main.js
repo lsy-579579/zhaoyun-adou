@@ -192,7 +192,11 @@
 
   function onUp(x, y) {
     var G = ZY.G;
-    if (G && G.scene === 'play') ZY.Board.onUp(x, y);
+    if (G && G.scene === 'play') {
+      ZY.Board.onUp(x, y);
+      // 放置后扫描相邻碎片自动合成武将（覆盖所有放置路径）
+      if (G.p) ZY.Board.autoSynthesize(G.p, 'p', true);
+    }
   }
 
   A.on('down', onDown);
