@@ -179,7 +179,9 @@
     ctx.fillStyle = 'rgba(30,26,20,0.7)';
     ctx.fillRect(0, 0, DW, DH);
     // 弹窗面板
-    var pw = 520, ph = 280;
+    var n = C.AVATARS.length, ar = 60, gap = 28;
+    var gridW = n * (ar * 2) + (n - 1) * gap;
+    var pw = gridW + 80, ph = 320;
     var px = (DW - pw) / 2, py = (DH - ph) / 2;
     ctx.fillStyle = '#f4f0e4';
     R.roundRect(ctx, px, py, pw, ph, 16);
@@ -195,10 +197,8 @@
     ctx.textBaseline = 'middle';
     ctx.fillText('选择头像', DW / 2, py + 48);
     // 5 个人物头像横排
-    var n = C.AVATARS.length, ar = 46, gap = 24;
-    var gridW = n * (ar * 2) + (n - 1) * gap;
     var startX = (DW - gridW) / 2 + ar;
-    var cy = py + 140;
+    var cy = py + 160;
     var cur = UI.currentAvatar();
     UI.avatarButtons = [];
     for (var i = 0; i < n; i++) {
@@ -206,11 +206,11 @@
       var sel = (C.AVATARS[i] === cur);
       R.avatar(ctx, cx, cy, ar, C.AVATARS[i], sel);
       // 名称标签
-      R.font(ctx, 22, true);
+      R.font(ctx, 24, true);
       ctx.fillStyle = sel ? '#b8860b' : '#6a5c42';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(C.AVATAR_LABELS[C.AVATARS[i]], cx, cy + ar + 22);
+      ctx.fillText(C.AVATAR_LABELS[C.AVATARS[i]], cx, cy + ar + 24);
       UI.avatarButtons.push({ x: cx - ar, y: cy - ar, w: ar * 2, h: ar * 2, ch: C.AVATARS[i] });
     }
     ctx.restore();

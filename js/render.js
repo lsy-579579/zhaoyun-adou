@@ -915,77 +915,89 @@
     ctx.beginPath();
     ctx.arc(x, y, r - 1, 0, Math.PI * 2);
     ctx.clip();
-    // 脸部底色圆
+    // 脸部底色圆（占大头）
     ctx.fillStyle = pal.face;
     ctx.beginPath();
-    ctx.arc(x, y - r * 0.05, r * 0.6, 0, Math.PI * 2);
+    ctx.arc(x, y, r * 0.62, 0, Math.PI * 2);
     ctx.fill();
-    // 各角色特征
+    // 统一眼睛（所有角色都有）
+    ctx.fillStyle = '#2a2a2a';
+    ctx.beginPath(); ctx.arc(x - r * 0.2, y - r * 0.05, r * 0.09, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + r * 0.2, y - r * 0.05, r * 0.09, 0, Math.PI * 2); ctx.fill();
+    // 统一嘴巴
+    ctx.strokeStyle = '#7a3a2a';
+    ctx.lineWidth = r * 0.06;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(x, y + r * 0.25, r * 0.12, Math.PI * 0.15, Math.PI * 0.85);
+    ctx.stroke();
+    // 各角色特征（在眼睛嘴巴之上叠加）
     if (id === 'wukong') {
-      // 金箍（额前金色环）
+      // 金箍（额前金色弧）
       ctx.strokeStyle = '#e8c53a';
-      ctx.lineWidth = r * 0.12;
+      ctx.lineWidth = r * 0.14;
       ctx.beginPath();
-      ctx.arc(x, y - r * 0.35, r * 0.55, Math.PI * 0.15, Math.PI * 0.85);
+      ctx.arc(x, y - r * 0.45, r * 0.55, Math.PI * 0.15, Math.PI * 0.85);
       ctx.stroke();
-      // 火眼金睛
-      ctx.fillStyle = '#a8402c';
-      ctx.beginPath(); ctx.arc(x - r * 0.22, y - r * 0.05, r * 0.08, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x + r * 0.22, y - r * 0.05, r * 0.08, 0, Math.PI * 2); ctx.fill();
+      // 火眼（眼睛红色描边）
+      ctx.strokeStyle = '#a8402c';
+      ctx.lineWidth = r * 0.05;
+      ctx.beginPath(); ctx.arc(x - r * 0.2, y - r * 0.05, r * 0.13, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x + r * 0.2, y - r * 0.05, r * 0.13, 0, Math.PI * 2); ctx.stroke();
     } else if (id === 'bajie') {
-      // 猪鼻
+      // 猪鼻（覆盖嘴巴位置）
       ctx.fillStyle = pal.accent;
       ctx.beginPath();
-      ctx.ellipse(x, y + r * 0.15, r * 0.22, r * 0.16, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, y + r * 0.22, r * 0.26, r * 0.18, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = pal.face;
-      ctx.beginPath(); ctx.arc(x - r * 0.1, y + r * 0.15, r * 0.05, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(x + r * 0.1, y + r * 0.15, r * 0.05, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x - r * 0.1, y + r * 0.22, r * 0.05, r * 0.08, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x + r * 0.1, y + r * 0.22, r * 0.05, r * 0.08, 0, 0, Math.PI * 2); ctx.fill();
       // 大耳朵
       ctx.fillStyle = pal.face;
-      ctx.beginPath(); ctx.ellipse(x - r * 0.55, y, r * 0.18, r * 0.3, -0.3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(x + r * 0.55, y, r * 0.18, r * 0.3, 0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x - r * 0.62, y - r * 0.05, r * 0.2, r * 0.34, -0.3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(x + r * 0.62, y - r * 0.05, r * 0.2, r * 0.34, 0.3, 0, Math.PI * 2); ctx.fill();
     } else if (id === 'shaseng') {
-      // 胡子
+      // 胡子（嘴巴下方）
       ctx.fillStyle = '#3a3a3a';
       ctx.beginPath();
-      ctx.ellipse(x, y + r * 0.25, r * 0.35, r * 0.2, 0, 0, Math.PI * 2);
+      ctx.ellipse(x, y + r * 0.45, r * 0.32, r * 0.18, 0, 0, Math.PI * 2);
       ctx.fill();
       // 项链珠
       ctx.fillStyle = '#d8d0c0';
       for (var i = -2; i <= 2; i++) {
-        ctx.beginPath(); ctx.arc(x + i * r * 0.12, y + r * 0.5, r * 0.05, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x + i * r * 0.13, y + r * 0.62, r * 0.055, 0, Math.PI * 2); ctx.fill();
       }
     } else if (id === 'tangsan') {
-      // 僧帽（红色顶部）
+      // 僧帽（顶部半圆）
       ctx.fillStyle = pal.bg;
       ctx.beginPath();
-      ctx.arc(x, y - r * 0.55, r * 0.7, Math.PI, Math.PI * 2);
+      ctx.arc(x, y - r * 0.4, r * 0.72, Math.PI, Math.PI * 2);
       ctx.fill();
       // 金色帽边
       ctx.strokeStyle = pal.accent;
-      ctx.lineWidth = r * 0.08;
+      ctx.lineWidth = r * 0.1;
       ctx.beginPath();
-      ctx.moveTo(x - r * 0.7, y - r * 0.55);
-      ctx.lineTo(x + r * 0.7, y - r * 0.55);
+      ctx.moveTo(x - r * 0.72, y - r * 0.4);
+      ctx.lineTo(x + r * 0.72, y - r * 0.4);
       ctx.stroke();
     } else if (id === 'bailong') {
       // 龙角
-      ctx.fillStyle = pal.accent;
-      ctx.beginPath();
-      ctx.moveTo(x - r * 0.35, y - r * 0.4);
-      ctx.lineTo(x - r * 0.2, y - r * 0.75);
-      ctx.lineTo(x - r * 0.1, y - r * 0.4);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(x + r * 0.35, y - r * 0.4);
-      ctx.lineTo(x + r * 0.2, y - r * 0.75);
-      ctx.lineTo(x + r * 0.1, y - r * 0.4);
-      ctx.fill();
-      // 银色发
       ctx.fillStyle = '#e8edf5';
       ctx.beginPath();
-      ctx.arc(x, y - r * 0.15, r * 0.55, 0, Math.PI * 2);
+      ctx.moveTo(x - r * 0.38, y - r * 0.35);
+      ctx.lineTo(x - r * 0.22, y - r * 0.78);
+      ctx.lineTo(x - r * 0.08, y - r * 0.35);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(x + r * 0.38, y - r * 0.35);
+      ctx.lineTo(x + r * 0.22, y - r * 0.78);
+      ctx.lineTo(x + r * 0.08, y - r * 0.35);
+      ctx.fill();
+      // 银色刘海
+      ctx.fillStyle = '#e8edf5';
+      ctx.beginPath();
+      ctx.arc(x, y - r * 0.25, r * 0.5, Math.PI, Math.PI * 2);
       ctx.fill();
     }
     ctx.restore();
