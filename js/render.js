@@ -290,14 +290,14 @@
     ctx.restore();
   };
 
-  // 阿斗：白牌「斗」+ 金冠 + 红心排
+  // 阿斗：白牌「僧」+ 金冠 + 红心排
   R.adou = function (ctx, x, y, s, hearts, maxHearts, shake) {
     ctx.save();
     if (shake) ctx.translate((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 4);
     for (var i = 0; i < maxHearts; i++) {
       R.heart(ctx, x - (maxHearts - 1) * s * 0.19 + i * s * 0.38, y - s * 0.82, s * 0.3, i < hearts);
     }
-    R.mahjong(ctx, x, y, s, '斗', {});
+    R.mahjong(ctx, x, y, s, '僧', {});
     R.crown(ctx, x, y - s * 0.52, s * 0.5);
     ctx.restore();
   };

@@ -176,10 +176,14 @@
     var c = +cr[0], r = +cr[1];
     var found = findAdjFragPair(S, side, c, r, placeCh);
     if (!found) return false;
-    // 合成：邻居格变 half=0（首字），placeKey 放 half=1（尾字）
+    // 保持各自原有的字在原位，按名字首字决定 half（首字=half 0）
     var pair = found.pair;
-    S.units[found.neighborKey] = B.makeGeneralHalf(pair.name, pair.firstCh, 0, placeKey);
-    S.units[placeKey] = B.makeGeneralHalf(pair.name, pair.secondCh, 1, found.neighborKey);
+    var neighborCh = S.units[found.neighborKey].ch;
+    var firstChar = pair.name[0];
+    var neighborHalf = (neighborCh === firstChar) ? 0 : 1;
+    var placeHalf = (placeCh === firstChar) ? 0 : 1;
+    S.units[found.neighborKey] = B.makeGeneralHalf(pair.name, neighborCh, neighborHalf, placeKey);
+    S.units[placeKey] = B.makeGeneralHalf(pair.name, placeCh, placeHalf, found.neighborKey);
     var p = M_().cellCenter(c, r);
     afterMerge(S, S.units[placeKey], p.x, p.y, isPlayer);
     return true;
@@ -333,8 +337,20 @@
 
     // 从备战席拖出
     if (d.from.type === 'bench') {
-      // 拖回备战席（换位）
+      // 拖回备战席（先尝试合成，否则换位）
       if (bi >= 0 && bi !== d.from.idx) {
+        var tb = S.bench[bi];
+        if (tb) {
+          var mb = B.tryMerge(d.unit, tb);
+          if (mb) {
+            S.bench[bi] = mb;
+            S.bench[d.from.idx] = null;
+            var bpb = B.benchSlotCenter(bi);
+            afterMerge(S, mb, bpb.x, bpb.y, true);
+            return true;
+          }
+        }
+        // 合并不成功：交换位置
         var tmp = S.bench[bi];
         S.bench[bi] = d.unit;
         S.bench[d.from.idx] = tmp;
@@ -457,11 +473,12 @@
     // 武将半身：单字 + 金底 + 半身标识
     var isHalf = u.kind === 'g' && u.half != null;
     var ch = isHalf ? u.ch : (u.kind === 'g' ? u.name : u.ch);
-    // 攻击瞬间文字变形化作兵器（原版核心特色，仅 half=0 触发避免双倍）
-    if ((u.kind === 's' || (u.kind === 'g' && u.half === 0)) && u.attackT && u.attackT > 0) {
+    // 攻击瞬间文字变形化作兵器（原版核心特色，两个字都要有特效）
+    if ((u.kind === 's' || u.kind === 'g') && u.attackT && u.attackT > 0) {
       ctx.save();
       ctx.globalAlpha = alpha != null ? alpha : 1;
-      var morphCh = u.kind === 'g' ? u.name : ch;
+      // 半身武将用自己的字变形；整将用全名
+      var morphCh = (u.kind === 'g' && u.half != null) ? u.ch : (u.kind === 'g' ? u.name : ch);
       var morphed = R.morphTile(ctx, x, y, size, morphCh, u.kind, u.attackT);
       ctx.restore();
       if (morphed) return;

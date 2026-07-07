@@ -50,6 +50,14 @@
     return best;
   }
 
+  // 同步攻击动画到武将另一半（两字都显示攻击特效，但伤害只在 half=0 结算）
+  function syncAttackT(S, u, t) {
+    u.attackT = t;
+    if (u.kind === 'g' && u.pairedKey && S.units[u.pairedKey]) {
+      S.units[u.pairedKey].attackT = t;
+    }
+  }
+
   function updateSide(S, side, dt) {
     var L = ZY.L, G = ZY.G;
     var list = enemiesOf(side);
@@ -58,8 +66,11 @@
     ZY.Board.eachUnit(S, function (u, c, r) {
       var st = ZY.unitStats(u);
       if (st.inert) return;
-      // 武将半身：只让 half=0 发起攻击，避免双倍伤害
-      if (u.kind === 'g' && u.half != null && u.half !== 0) return;
+      // 武将半身：只让 half=0 发起攻击，避免双倍伤害；但 half=1 仍衰减攻击动画
+      if (u.kind === 'g' && u.half != null && u.half !== 0) {
+        if (u.attackT > 0) u.attackT -= dt;
+        return;
+      }
       if (u.attackT > 0) u.attackT -= dt; // 攻击变形动画计时
       u.cd -= dt;
       if (u.cd > 0) return;
@@ -79,7 +90,7 @@
         }
         if (hitAny) {
           u.cd = st.itv;
-          u.attackT = 0.35; // 触发文字变形
+          syncAttackT(S, u, 0.35); // 触发文字变形（两字同步）
           BT.fx('roar', p.x, p.y);
           if (side === 'p') ZY.sfx('shoot');
         } else u.cd = 0.08;
@@ -90,7 +101,7 @@
         var t0 = mostAdvanced(list, p.x, p.y, range);
         if (!t0) { u.cd = 0.08; return; }
         u.cd = st.itv;
-        u.attackT = 0.35; // 触发文字变形
+        syncAttackT(S, u, 0.35); // 触发文字变形（两字同步）
         // 贯穿：目标连线上的敌人全部命中
         var ang = Math.atan2(t0.y - p.y, t0.x - p.x);
         BT.fx('lance', p.x, p.y, ang, range);
@@ -109,7 +120,7 @@
       var target = mostAdvanced(list, p.x, p.y, range);
       if (!target) { u.cd = 0.08; return; }
       u.cd = st.itv;
-      u.attackT = 0.35; // 触发文字变形
+      syncAttackT(S, u, 0.35); // 触发文字变形（两字同步）
       var exec = st.skill === 'execute' && !target.boss && target.hp / target.maxHp < 0.35;
       G.bullets.push({
         x: p.x, y: p.y - L.cell * 0.2,
