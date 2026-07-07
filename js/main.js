@@ -202,6 +202,7 @@
     }
     if (G.scene === 'pause') {
       if (R.inside(ub.resume, x, y)) { ZY.sfx('click'); G.scene = 'play'; }
+      else if (R.inside(ub.home, x, y)) { ZY.sfx('click'); ZY.G = null; }
       return;
     }
     if (R.inside(ub.pause, x, y)) { ZY.sfx('click'); G.scene = 'pause'; return; }

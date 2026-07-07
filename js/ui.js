@@ -381,6 +381,8 @@
     ctx.restore();
     UI.buttons.resume = { x: DW / 2 - 160, y: DH * 0.5, w: 320, h: 96, label: '继续', fs: 40 };
     R.redButton(ctx, UI.buttons.resume);
+    UI.buttons.home = { x: DW / 2 - 160, y: DH * 0.5 + 120, w: 320, h: 96, label: '返回首页', fs: 40 };
+    R.darkButton(ctx, UI.buttons.home);
   };
 
   ZY.UI = UI;
