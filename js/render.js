@@ -893,26 +893,55 @@
 
   // 5 卡牌选择面板已移除：原版机制为征兵直接替换备战席，无需弹窗
 
-  // 玩家头像：圆形底 + 单字，selected 时金色高亮边框
-  R.avatar = function (ctx, x, y, r, ch, selected) {
+  // 玩家头像：圆形人物图片，selected 时金色高亮边框
+  // id 为人物标识（wukong/bajie/...），图片浏览器端动态加载
+  var avatarImgs = {}; // id -> Image
+  var avatarLoading = {}; // id -> bool
+  function ensureAvatarImg(id) {
+    if (avatarImgs[id] || avatarLoading[id]) return;
+    var url = ZY.C.AVATAR_IMG && ZY.C.AVATAR_IMG[id];
+    if (!url) return;
+    avatarLoading[id] = true;
+    var img = new Image();
+    img.onload = function () { avatarImgs[id] = img; };
+    img.onerror = function () { avatarLoading[id] = false; };
+    img.src = url;
+  }
+  R.avatar = function (ctx, x, y, r, id, selected) {
     ctx.save();
     // 圆形底
     ctx.fillStyle = selected ? '#fff4d0' : '#efe9d8';
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fill();
+    // 人物图片（已加载则裁剪圆形绘制）
+    var img = avatarImgs[id];
+    if (img) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(x, y, r - 2, 0, Math.PI * 2);
+      ctx.clip();
+      // 居中裁剪正方形绘制
+      var s = Math.min(img.width, img.height);
+      var sx = (img.width - s) / 2, sy = (img.height - s) / 2;
+      ctx.drawImage(img, sx, sy, s, s, x - r, y - r, r * 2, r * 2);
+      ctx.restore();
+    } else {
+      // 图片未加载：显示人物名字首字作为 fallback
+      var label = (ZY.C.AVATAR_LABELS && ZY.C.AVATAR_LABELS[id]) || '?';
+      R.font(ctx, r * 1.05, true);
+      ctx.fillStyle = '#5a4a34';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label[0], x, y + 1);
+      ensureAvatarImg(id); // 触发加载
+    }
     // 边框
     ctx.strokeStyle = selected ? '#e8a92e' : '#3a3126';
     ctx.lineWidth = selected ? 5 : 3;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.stroke();
-    // 单字
-    R.font(ctx, r * 1.05, true);
-    ctx.fillStyle = '#5a4a34';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(ch, x, y + 1);
     ctx.restore();
   };
 

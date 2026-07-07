@@ -168,7 +168,7 @@
     if (UI.avatarPickerOpen) UI.drawAvatarPicker(ctx);
   };
 
-  // 头像选择弹窗：5列×2行网格，点击切换头像
+  // 头像选择弹窗：5个人物头像横排，点击切换头像
   UI.drawAvatarPicker = function (ctx) {
     var DW = A.DW, DH = A.DH;
     ctx.save();
@@ -176,7 +176,7 @@
     ctx.fillStyle = 'rgba(30,26,20,0.7)';
     ctx.fillRect(0, 0, DW, DH);
     // 弹窗面板
-    var pw = 460, ph = 360;
+    var pw = 520, ph = 280;
     var px = (DW - pw) / 2, py = (DH - ph) / 2;
     ctx.fillStyle = '#f4f0e4';
     R.roundRect(ctx, px, py, pw, ph, 16);
@@ -190,26 +190,26 @@
     ctx.fillStyle = '#5a4a34';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('选择头像', DW / 2, py + 50);
-    // 头像网格（5列×2行）
-    var cols = 5, rows = 2, ar = 36, gap = 22;
-    var gridW = cols * (ar * 2) + (cols - 1) * gap;
+    ctx.fillText('选择头像', DW / 2, py + 48);
+    // 5 个人物头像横排
+    var n = C.AVATARS.length, ar = 46, gap = 24;
+    var gridW = n * (ar * 2) + (n - 1) * gap;
     var startX = (DW - gridW) / 2 + ar;
-    var startY = py + 110;
+    var cy = py + 140;
     var cur = UI.currentAvatar();
     UI.avatarButtons = [];
-    for (var i = 0; i < C.AVATARS.length; i++) {
-      var cx = startX + (i % cols) * (ar * 2 + gap);
-      var cy = startY + Math.floor(i / cols) * (ar * 2 + gap);
+    for (var i = 0; i < n; i++) {
+      var cx = startX + i * (ar * 2 + gap);
       var sel = (C.AVATARS[i] === cur);
       R.avatar(ctx, cx, cy, ar, C.AVATARS[i], sel);
+      // 名称标签
+      R.font(ctx, 22, true);
+      ctx.fillStyle = sel ? '#b8860b' : '#6a5c42';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(C.AVATAR_LABELS[C.AVATARS[i]], cx, cy + ar + 22);
       UI.avatarButtons.push({ x: cx - ar, y: cy - ar, w: ar * 2, h: ar * 2, ch: C.AVATARS[i] });
     }
-    // 关闭按钮区域（点击弹窗外也关闭，这里记录底部按钮）
-    var closeY = py + ph - 60;
-    R.font(ctx, 28, true);
-    ctx.fillStyle = '#8a3a28';
-    ctx.fillText('点击头像确认', DW / 2, closeY);
     ctx.restore();
   };
 
