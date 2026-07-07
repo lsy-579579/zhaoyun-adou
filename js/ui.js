@@ -244,7 +244,7 @@
       ctx.stroke();
       var u = G.p.bench[i];
       var dg = ZY.Board.dragging();
-      if (u && !(dg && dg.from.type === 'bench' && dg.from.idx === i)) {
+      if (u && !(dg && dg.moved && dg.from.type === 'bench' && dg.from.idx === i)) {
         ZY.Board.drawUnit(ctx, u, p.x, p.y, L.benchSlot - 10, 1);
       }
     }
@@ -262,7 +262,7 @@
 
     // 拖拽幽灵（画在 y-40，放置判定也用 y-40，保持一致）
     var d = ZY.Board.dragging();
-    if (d) {
+    if (d && d.moved) {
       ZY.Board.drawUnit(ctx, d.unit, d.x, d.y - 40, L.cell + 10, 0.92);
       // 拖铲子时高亮所有可铲 block 格（玩家侧所有绿格）
       if (d.unit.kind === 'shovel') {

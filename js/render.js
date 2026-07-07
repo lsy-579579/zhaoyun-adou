@@ -893,9 +893,41 @@
 
   // 5 卡牌选择面板已移除：原版机制为征兵直接替换备战席，无需弹窗
 
-  R.inside = function (b, x, y) {
-    return b && x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+  // 攻击范围圈：单位周围的半透明圆形射程指示（参考原版样式）
+  // 金色淡填充 + 虚线边框，中心为单位像素位置，半径 = range * cell
+  R.rangeCircle = function (ctx, x, y, radius, side) {
+    if (radius <= 0) return;
+    ctx.save();
+    // 外层柔光填充
+    var fill = (side === 'e') ? 'rgba(180,60,40,0.14)' : 'rgba(232,197,58,0.16)';
+    var stroke = (side === 'e') ? 'rgba(180,60,40,0.7)' : 'rgba(212,160,40,0.8)';
+    ctx.fillStyle = fill;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    // 虚线边框
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([8, 5]);
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // 中心十字准星
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath();
+    ctx.moveTo(x - 8, y); ctx.lineTo(x + 8, y);
+    ctx.moveTo(x, y - 8); ctx.lineTo(x, y + 8);
+    ctx.stroke();
+    ctx.restore();
   };
+
+  R.inside = function (b, x, y) {
+    return b && x >= b.x && x <= b.x + b.w && y <= b.y + b.h && y >= b.y;
+  };
+
 
   ZY.R = R;
 })();

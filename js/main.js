@@ -148,15 +148,40 @@
       var S = side === 'p' ? G.p : G.e;
       ZY.Board.eachUnit(S, function (u, c, r, k) {
         var p = ZY.Map.cellCenter(c, r);
-        var isDragSrc = d && side === 'p' && d.from.type === 'cell' && d.from.key === k;
+        var isDragSrc = d && d.moved && side === 'p' && d.from.type === 'cell' && d.from.key === k;
         ZY.Board.drawUnit(ctx, u, p.x, p.y, L.cell - 12, isDragSrc ? 0.3 : 1);
       });
     });
   }
 
+  // 绘制选中单位的攻击范围圈（参考原版半透明圆形样式）
+  function drawSelectedRange(ctx) {
+    var sel = ZY.Board.selected();
+    if (!sel) return;
+    var G = ZY.G, L = ZY.L;
+    var u = null, px, py;
+    if (sel.key.indexOf('bench_') === 0) {
+      var bi = parseInt(sel.key.slice(6), 10);
+      u = G.p.bench[bi];
+      var bc = ZY.Board.benchSlotCenter(bi);
+      px = bc.x; py = bc.y;
+    } else {
+      u = G.p.units[sel.key];
+      var cr = sel.key.split('_');
+      var cc = ZY.Map.cellCenter(+cr[0], +cr[1]);
+      px = cc.x; py = cc.y;
+    }
+    if (!u) { ZY.Board.clearSelected(); return; }
+    var st = ZY.unitStats(u);
+    if (st.inert) return; // 碎片/铲子无攻击范围
+    var radius = st.range * L.cell;
+    R.rangeCircle(ctx, px, py, radius, 'p');
+  }
+
   function drawPlay(ctx) {
     R.paper(ctx, A.DW, A.DH);
     drawMap(ctx);
+    drawSelectedRange(ctx);
     drawUnits(ctx);
     ZY.Enemies.draw(ctx);
     ZY.Battle.draw(ctx);

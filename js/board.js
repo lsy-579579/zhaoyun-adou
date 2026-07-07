@@ -7,7 +7,8 @@
   var C = ZY.C, R = ZY.R, M_ = function () { return ZY.Map; };
 
   var B = {};
-  var drag = null; // {from:{type:'bench'|'cell', idx|key}, unit, x, y}
+  var drag = null; // {from:{type:'bench'|'cell', idx|key}, unit, x, y, downX, downY, moved}
+  var selected = null; // {side:'p', key:'c_r'|'bench_i'} 当前选中显示攻击范围的单位
 
   B.newSide = function () {
     return {
@@ -22,6 +23,7 @@
 
   B.reset = function () {
     drag = null;
+    selected = null;
   };
 
   function key(c, r) { return c + '_' + r; }
@@ -354,7 +356,7 @@
     var S = G.p;
     var bi = benchSlotAt(x, y);
     if (bi >= 0 && S.bench[bi]) {
-      drag = { from: { type: 'bench', idx: bi }, unit: S.bench[bi], x: x, y: y };
+      drag = { from: { type: 'bench', idx: bi }, unit: S.bench[bi], x: x, y: y, downX: x, downY: y, moved: false };
       return true;
     }
     var cell = Map.cellAt(x, y);
@@ -362,38 +364,40 @@
       var k = key(cell.c, cell.r);
       if (Map.cellType[k] === 'build_p' && S.units[k]) {
         var u = S.units[k];
-        var d = { from: { type: 'cell', key: k }, unit: u, x: x, y: y };
+        var d = { from: { type: 'cell', key: k }, unit: u, x: x, y: y, downX: x, downY: y, moved: false };
         // 武将半身：拾取后单字可独立拖动（拖走后另一半变回碎片）
-        // 为支持"未拖动放回原位"，保留原半身信息，拖动开始时才真正拆分
+        // 拖动超过阈值时才真正拆分（见 onMove），点击则用于查看攻击范围
         if (u.kind === 'g' && u.half != null && u.pairedKey && S.units[u.pairedKey]) {
           d.wasHalf = true;
           d.pairKey = u.pairedKey;
           d.origUnit = u; // 原半身（放回原位时恢复）
-          d.downX = x;   // 记录按下位置，用于判断拖动距离阈值
-          d.downY = y;
         }
         drag = d;
         return true;
       }
     }
+    // 点空白：清除攻击范围选中
+    selected = null;
     return false;
   };
 
   B.onMove = function (x, y) {
     if (!drag) return false;
-    // 武将半身：真正开始拖动时才拆分（配对格变回碎片，拖动对象变碎片）
-    // 需拖动超过阈值才拆分，避免轻微拖动（误触）导致武将被拆散
-    if (drag.wasHalf && !drag.split) {
+    // 阈值判断：未超过 8px 视为点击（查看攻击范围），不进入拖拽
+    if (!drag.moved) {
       var dx0 = x - drag.downX, dy0 = y - drag.downY;
-      if (dx0 * dx0 + dy0 * dy0 < 64) { // 8px 阈值
-        return true;
+      if (dx0 * dx0 + dy0 * dy0 < 64) return true; // 8px 阈值
+      drag.moved = true;
+      selected = null; // 开始拖拽时清除攻击范围选中
+      // 武将半身：真正开始拖动时才拆分（配对格变回碎片，拖动对象变碎片）
+      if (drag.wasHalf && !drag.split) {
+        var S = ZY.G.p;
+        var pairU = S.units[drag.pairKey];
+        S.units[drag.pairKey] = B.makeFrag(pairU.ch);
+        drag.unit = B.makeFrag(drag.unit.ch);
+        delete S.units[drag.from.key];
+        drag.split = true;
       }
-      var S = ZY.G.p;
-      var pairU = S.units[drag.pairKey];
-      S.units[drag.pairKey] = B.makeFrag(pairU.ch);
-      drag.unit = B.makeFrag(drag.unit.ch);
-      delete S.units[drag.from.key];
-      drag.split = true;
     }
     drag.x = x; drag.y = y;
     return true;
@@ -406,10 +410,14 @@
     var d = drag;
     drag = null;
 
-    // 武将半身未被拖动（仅点击）：原样保留，不做任何变动
-    if (d.wasHalf && !d.split) {
+    // 未拖动（点击）：切换攻击范围选中显示
+    if (!d.moved) {
+      var selKey = (d.from.type === 'bench') ? ('bench_' + d.from.idx) : d.from.key;
+      if (selected && selected.side === 'p' && selected.key === selKey) selected = null;
+      else selected = { side: 'p', key: selKey };
       return true;
     }
+    // 以下为真正拖拽放置逻辑（d.moved === true，武将半身此时已拆分）
 
     // 与拖拽幽灵显示位置一致（幽灵画在 y-40），放置判定也用 y-40
     var py = y - 40;
@@ -566,6 +574,8 @@
   };
 
   B.dragging = function () { return drag; };
+  B.selected = function () { return selected; };
+  B.clearSelected = function () { selected = null; };
 
   B.eachUnit = function (S, fn) {
     for (var k in S.units) {
