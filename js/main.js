@@ -130,7 +130,7 @@
     }
     ctx.restore();
 
-    // 刷怪丛与阿斗
+    // 刷怪丛与守将
     var G = ZY.G;
     ['p', 'e'].forEach(function (side) {
       var sp = Map.spawnOf(side), ad = Map.adouOf(side);

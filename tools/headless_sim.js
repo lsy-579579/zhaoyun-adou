@@ -41,7 +41,7 @@
 
   var RUNS = 12;
   // playerItv=0.5 模拟熟练玩家；1.15+失误 即对手同水平
-  print('=== 赵云与阿斗(对战版) 模拟 x' + RUNS + '（玩家=0.5s快手速）===');
+  print('=== 悟空与唐僧(对战版) 模拟 x' + RUNS + '（玩家=0.5s快手速）===');
   var wins = 0, waves = [];
   for (var r = 1; r <= RUNS; r++) {
     var res = runOne(1500, 0.5);

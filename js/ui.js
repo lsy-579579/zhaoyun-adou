@@ -141,7 +141,7 @@
       ctx.stroke();
     }
     ctx.restore();
-    // 僧字（替代阿斗）：无框 + 左右摆动躲避 + 金箍 + 红心
+    // 僧字（守将）：无框 + 左右摆动躲避 + 金箍 + 红心
     var monkX = DW / 2, monkY = by - 26, monkS = 110;
     // 悟空题字（跳动金字牌，放在左下）
     var wukongX = monkX - 140, wukongY = monkY + 96, wukongS = 78;
@@ -401,7 +401,7 @@
       ctx.fillText('晋升！' + G.rankPromote.newRankName, DW / 2, DH * 0.32 + 56);
     }
 
-    // 阿斗与贼群
+    // 守将与贼群
     var ay = DH * 0.5;
     ctx.fillStyle = 'rgba(200,200,205,0.6)';
     ctx.beginPath();

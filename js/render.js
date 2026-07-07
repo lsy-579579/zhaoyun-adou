@@ -1,4 +1,4 @@
-// 渲染：原版风格——暖米色宣纸、青苔地砖、棕色土路、麻将牌字块、红心金冠阿斗
+// 渲染：暖米色宣纸、青苔地砖、棕色土路、麻将牌字块、红心金冠守将
 (function () {
   var root = (typeof GameGlobal !== 'undefined') ? GameGlobal
     : (typeof window !== 'undefined') ? window : globalThis;
@@ -290,7 +290,7 @@
     ctx.restore();
   };
 
-  // 阿斗：白牌「僧」+ 金冠 + 红心排
+  // 守将：白牌「僧」+ 金冠 + 红心排
   R.adou = function (ctx, x, y, s, hearts, maxHearts, shake) {
     ctx.save();
     if (shake) ctx.translate((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 4);
@@ -328,7 +328,7 @@
     ctx.restore();
   };
 
-  // 原版风格：会跳动的方块字（参考《赵云与阿斗》实机）
+  // 会跳动的方块字（顶部停留短、底部挤压）
   // 特征：纯文字方块 + 浅色底 + 持续小幅度垂直弹跳（顶部停留短、底部挤压）
   // ch：单字或两字；kind：'general'(武将金色) | 'monk'(僧米白) | 'enemy'(敌人)
   R.livingTile = function (ctx, x, y, s, ch, kind, t) {
@@ -543,7 +543,7 @@
     return true; // 已渲染变形
   };
 
-  // 僧（替代阿斗）：无框"僧"字 + 头顶金箍 + 红心 + 左右摆动躲避动画
+  // 僧（守将）：无框"僧"字 + 头顶金箍 + 红心 + 左右摆动躲避动画
   // pokeT: 戳刺相位（0~1），接近 0/1 时为戳下瞬间，0.5 为收回
   R.monk = function (ctx, x, y, s, hearts, maxHearts, shake, t, pokeT) {
     ctx.save();

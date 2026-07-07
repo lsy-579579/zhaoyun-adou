@@ -1,5 +1,5 @@
 {
-  "description": "赵云与阿斗 - 文字合成策略塔防（抖音小游戏）。导入抖音开发者工具时，将本文件重命名为 project.config.json 覆盖微信版配置，并填入 tt 开头的 appid。",
+  "description": "悟空与唐僧 - 文字合成策略塔防（抖音小游戏）。导入抖音开发者工具时，将本文件重命名为 project.config.json 覆盖微信版配置，并填入 tt 开头的 appid。",
   "setting": {
     "urlCheck": false,
     "es6": true,
@@ -7,5 +7,5 @@
   },
   "compileType": "game",
   "appid": "ttYourAppidHere",
-  "projectname": "zhaoyun-adou"
+  "projectname": "wukong-tangseng"
 }

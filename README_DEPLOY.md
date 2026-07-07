@@ -47,19 +47,19 @@ audio/                  ← 9 个 wav 音效
 ## 四、GitHub Pages（免费，但要会 git）
 
 ```bash
-cd zhaoyun-adou
+cd wukong-tangseng
 git init && git add . && git commit -m init
-# 在 github.com 新建仓库，比如 zhaoyun-adou
-git remote add origin https://github.com/你的用户名/zhaoyun-adou.git
+# 在 github.com 新建仓库，比如 wukong-tangseng
+git remote add origin https://github.com/你的用户名/wukong-tangseng.git
 git push -u origin main
 # 在仓库 Settings → Pages → Source 选 main 分支根目录
-# 几分钟后得到 https://你的用户名.github.io/zhaoyun-adou
+# 几分钟后得到 https://你的用户名.github.io/wukong-tangseng
 ```
 
 ## 五、本地预览（给别人发之前自己测一下）
 
 ```bash
-cd zhaoyun-adou
+cd wukong-tangseng
 python3 -m http.server 8765
 # 浏览器打开 http://127.0.0.1:8765/
 ```
@@ -70,15 +70,15 @@ python3 -m http.server 8765
 
 ## 验证部署是否成功
 
-打开部署链接，看到标题「赵云与阿斗」+ 红色「开始游戏」按钮就对了。
+打开部署链接，看到标题「悟空与唐僧」+ 红色「开始游戏」按钮就对了。
 
 然后:
 1. 点开始游戏 → 进入战场
 2. 点「征兵」→ 出现「刀」/「枪」字牌
 3. 把字牌拖到棋盘白格 → 同字合成升级
-4. 等 5 秒 → 「贼」字敌人从上方出现，沿路攻击你的「斗」字阿斗
+4. 等 5 秒 → 「贼」字敌人从上方出现，沿路攻击你的守将
 
-如果看到阿斗有 **3 颗红心** + **金冠** 就是正版风。
+如果看到守将有 **3 颗红心** + **金冠** 就对了。
 
 ## 常见问题
 

@@ -1,4 +1,4 @@
-// 敌人：双方同时受波，沿各自 S 形小路行进，抵达阿斗扣一颗红心
+// 敌人：双方同时受波，沿各自 S 形小路行进，抵达守将扣一颗红心
 (function () {
   var root = (typeof GameGlobal !== 'undefined') ? GameGlobal
     : (typeof window !== 'undefined') ? window : globalThis;
@@ -108,7 +108,7 @@
       e.x = p1.x + (p2.x - p1.x) * e.segT;
       e.y = p1.y + (p2.y - p1.y) * e.segT;
 
-      // 抵达阿斗
+      // 抵达守将
       if (e.seg >= pts.length - 1) {
         e.dead = true;
         var S = e.side === 'p' ? G.p : G.e;

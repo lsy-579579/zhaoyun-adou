@@ -51,7 +51,7 @@
     dao:  { ch: '盗', hp: 130,  spd: 0.9,  mantou: 3, size: 0.66 },
     kou:  { ch: '寇', hp: 280,  spd: 0.75, mantou: 5, size: 0.7  },
     fei:  { ch: '匪', hp: 150,  spd: 1.5,  mantou: 4, size: 0.6  },
-    boss: { ch: '曹', hp: 1100, spd: 0.5, mantou: 30, size: 0.95, boss: true }
+    boss: { ch: '牛', hp: 1100, spd: 0.5, mantou: 30, size: 0.95, boss: true }
   };
   C.hpMul = function (wave) {
     return 1 + (wave - 1) * 0.3 + Math.pow(Math.max(0, wave - 6), 1.5) * 0.12;

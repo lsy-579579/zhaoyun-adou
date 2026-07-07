@@ -268,7 +268,7 @@ const _cur = FIXED_RANK.rank * C.SUB_LEVELS_PER_RANK * C.STARS_PER_RANK
 const RATIO = Math.max(0, Math.min(1, _cur / _total));
 
 if (!SWEEP_MODE) {
-  console.log('=== 西游记塔防（赵云与阿斗对战版）无头模拟 ===');
+  console.log('=== 悟空与唐僧塔防 无头模拟 ===');
   console.log('段位: ' + _rankInfo.rankName + ' (rank ' + FIXED_RANK.rank
     + ', subLevel ' + FIXED_RANK.subLevel + ', stars ' + FIXED_RANK.stars
     + ') | ratio=' + RATIO.toFixed(4));
