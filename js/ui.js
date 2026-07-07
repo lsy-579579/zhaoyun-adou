@@ -143,9 +143,11 @@
     ctx.restore();
     // 僧字（替代阿斗）：无框 + 左右摆动躲避 + 金箍 + 红心
     var monkX = DW / 2, monkY = by - 26, monkS = 110;
-    // 金箍棒：紧贴僧字右侧，以棍中为锚点耍棍花
+    // 悟空题字（跳动金字牌，放在左下）
+    var wukongX = monkX - 140, wukongY = monkY + 96, wukongS = 78;
+    // 金箍棒：紧贴悟空右侧，以棍中为锚点耍棍花
     ctx.save();
-    var staffCx = monkX + 95, staffCy = monkY + 10; // 棍子中心（紧贴僧字右边）
+    var staffCx = wukongX + wukongS / 2 + 50, staffCy = wukongY; // 棍子中心（紧贴悟空右边）
     var staffHalf = 70; // 半棍长
     // 两端初始位置（竖直），R.staff 内部会以中点为锚旋转
     var staffTailX = staffCx, staffTailY = staffCy + staffHalf;
@@ -154,8 +156,8 @@
     var pokePhase = R.staff(ctx, staffTailX, staffTailY, staffHeadX, staffHeadY, t, 1.2);
     // 再画僧字，传入戳刺相位让它摆动躲避
     R.monk(ctx, monkX, monkY, monkS, 3, 3, false, t, pokePhase);
-    // 悟空题字（跳动金字牌，放在左下）
-    R.livingTile(ctx, monkX - 140, monkY + 96, 78, '悟空', 'general', t);
+    // 悟空题字
+    R.livingTile(ctx, wukongX, wukongY, wukongS, '悟空', 'general', t);
     ctx.restore();
 
     // 开始按钮
