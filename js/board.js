@@ -293,6 +293,7 @@
     if (t !== 'build_' + side) return false;
     var u = S.bench[benchIdx];
     if (!u) return false;
+    if (u.kind === 'shovel') return false; // 铲子不能上阵
     var ck = key(c, r);
     var target = S.units[ck];
     if (!target) {

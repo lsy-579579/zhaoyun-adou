@@ -63,11 +63,13 @@
     }
 
     // 4. 士兵/武将上阵（碎片留席上等配对；席满时也硬放）
+    //    铲子AI不会使用，直接丢弃避免遗留
     var emptyBench = 0;
     S.bench.forEach(function (x) { if (!x) emptyBench++; });
     for (var i3 = 0; i3 < S.bench.length; i3++) {
       var u2 = S.bench[i3];
       if (!u2) continue;
+      if (u2.kind === 'shovel') { S.bench[i3] = null; continue; } // AI丢弃铲子
       if (u2.kind === 'f' && emptyBench > 1) continue;
       for (var c2 = 0; c2 < cells.length; c2++) {
         var k2 = cells[c2][0] + '_' + cells[c2][1];
