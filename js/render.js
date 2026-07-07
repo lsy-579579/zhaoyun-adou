@@ -606,50 +606,78 @@
     var headY = y2 + (y1 - y2) * retractRatio * (1 - stab);
 
     ctx.save();
-    // 棒身（金色，两端粗中间细的渐变感）
-    var grad = ctx.createLinearGradient(x1, y1, headX, headY);
-    grad.addColorStop(0, '#b8860b');
-    grad.addColorStop(0.5, '#e8c53a');
-    grad.addColorStop(1, '#d4a017');
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 9;
-    ctx.lineCap = 'round';
+    // 棒身方向向量与法向量
+    var dx = headX - x1, dy = headY - y1;
+    var len = Math.hypot(dx, dy) || 1;
+    var ux = dx / len, uy = dy / len; // 单位方向
+    var nx = -uy, ny = ux;            // 法向量
+    // 棒身：深色铁柱（中段）
+    ctx.strokeStyle = '#3a3530';
+    ctx.lineWidth = 10;
+    ctx.lineCap = 'butt';
     ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(headX, headY);
+    ctx.moveTo(x1 + ux * 16, y1 + uy * 16);
+    ctx.lineTo(headX - ux * 16, headY - uy * 16);
     ctx.stroke();
-    // 棒身中段花纹（金色螺旋纹）
-    ctx.strokeStyle = 'rgba(138,106,16,0.7)';
+    // 铁柱高光
+    ctx.strokeStyle = 'rgba(120,110,100,0.55)';
     ctx.lineWidth = 2;
-    for (var i = 1; i < 6; i++) {
-      var r = i / 6;
-      var fx = x1 + (headX - x1) * r;
-      var fy = y1 + (headY - y1) * r;
-      ctx.beginPath();
-      ctx.arc(fx, fy, 4.5, 0, Math.PI * 2);
-      ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x1 + ux * 18 + nx * 2, y1 + uy * 18 + ny * 2);
+    ctx.lineTo(headX - ux * 18 + nx * 2, headY - uy * 18 + ny * 2);
+    ctx.stroke();
+
+    // 画一道金箍环（在棒身某位置 p，环宽 wRing）
+    function goldBand(px, py, halfW) {
+      ctx.fillStyle = '#e8c53a';
+      ctx.strokeStyle = '#8a6a10';
+      ctx.lineWidth = 1.5;
+      // 矩形条带（沿法向）
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(Math.atan2(uy, ux));
+      ctx.fillRect(-halfW, -7, halfW * 2, 14);
+      ctx.strokeRect(-halfW, -7, halfW * 2, 14);
+      // 金箍上的横向纹路（2~3 道细线）
+      ctx.strokeStyle = 'rgba(138,106,16,0.8)';
+      ctx.lineWidth = 1;
+      for (var k = -1; k <= 1; k++) {
+        ctx.beginPath();
+        ctx.moveTo(k * halfW * 0.5, -7);
+        ctx.lineTo(k * halfW * 0.5, 7);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
-    // 棒尾金箍（固定端，较大）
+
+    // 棒尾金箍（两道环 + 端部球）
+    goldBand(x1 + ux * 6, y1 + uy * 6, 6);
+    goldBand(x1 + ux * 16, y1 + uy * 16, 6);
     ctx.fillStyle = '#e8c53a';
     ctx.strokeStyle = '#8a6a10';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(x1, y1, 11, 0, Math.PI * 2);
+    ctx.arc(x1, y1, 10, 0, Math.PI * 2);
     ctx.fill(); ctx.stroke();
-    // 棒尾内圈
     ctx.fillStyle = '#b8860b';
     ctx.beginPath();
-    ctx.arc(x1, y1, 6, 0, Math.PI * 2);
+    ctx.arc(x1, y1, 5, 0, Math.PI * 2);
     ctx.fill();
-    // 棒头金箍（戳刺端，更大更亮）
+
+    // 棒头金箍（两道环 + 端部球，更大更亮）
+    goldBand(headX - ux * 6, headY - uy * 6, 7);
+    goldBand(headX - ux * 16, headY - uy * 16, 7);
     ctx.fillStyle = '#fce58a';
+    ctx.strokeStyle = '#8a6a10';
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(headX, headY, 13, 0, Math.PI * 2);
+    ctx.arc(headX, headY, 12, 0, Math.PI * 2);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#d4a017';
     ctx.beginPath();
-    ctx.arc(headX, headY, 7, 0, Math.PI * 2);
+    ctx.arc(headX, headY, 6, 0, Math.PI * 2);
     ctx.fill();
+
     // 戳下瞬间（stab 接近 1）添加冲击波
     if (stab > 0.85) {
       var waveAlpha = (stab - 0.85) / 0.15 * 0.6;
