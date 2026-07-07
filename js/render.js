@@ -602,9 +602,9 @@
     ctx.save();
     // 棒身方向向量与法向量
     var dx = headX - x1, dy = headY - y1;
-    var len = Math.hypot(dx, dy) || 1;
-    var ux = dx / len, uy = dy / len; // 单位方向
-    var nx = -uy, ny = ux;            // 法向量
+    var len2 = Math.hypot(dx, dy) || 1;
+    var ux = dx / len2, uy = dy / len2; // 单位方向
+    var nx = -uy, ny = ux;              // 法向量
     // 棒身：深色铁柱（中段）
     ctx.strokeStyle = '#3a3530';
     ctx.lineWidth = 10;
@@ -685,7 +685,7 @@
     }
     ctx.restore();
     // 返回当前戳刺相位（0~1），供僧字摆动用
-    return phase;
+    return stab;
   };
 
   // 金箍（孙悟空头上的紧箍咒，带光泽）
