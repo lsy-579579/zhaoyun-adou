@@ -161,11 +161,14 @@
   C.GEN_LV_ITV_MUL = function (lv) { return Math.pow(0.85, lv - 1); };
   C.GEN_MAX_LV = 5;
 
-  // 检查 (c,r) 的四连通相邻 build 格是否有配对碎片
+  // 检查 (c,r) 的左右相邻 build 格是否有配对碎片
+  // 合成顺序要求：姓名首字在左，尾字在右（如"悟"左"空"右可合成，"空悟"不可）
+  // fragCh 是放置在 (c,r) 的字，需与左右邻居按姓名顺序匹配
   // 返回 { neighborKey, pair } 或 null
   function findAdjFragPair(S, side, c, r, fragCh) {
     var Map = M_();
-    var neighbors = [[c-1,r],[c+1,r],[c,r-1],[c,r+1]];
+    // 仅左右相邻（不包含上下，因为姓名是横向书写）
+    var neighbors = [[c-1,r],[c+1,r]];
     for (var i = 0; i < neighbors.length; i++) {
       var nc = neighbors[i][0], nr = neighbors[i][1];
       var nk = key(nc, nr);
@@ -173,7 +176,15 @@
       var nu = S.units[nk];
       if (!nu || nu.kind !== 'f') continue;
       var pair = B.fragPair({ kind:'f', ch: fragCh }, nu);
-      if (pair) return { neighborKey: nk, pair: pair };
+      if (!pair) continue;
+      var firstChar = pair.name[0];
+      var placeIsFirst = (fragCh === firstChar);
+      var neighborIsFirst = (nu.ch === firstChar);
+      // 顺序校验：首字必须在左，尾字必须在右
+      var neighborOnLeft = (nc < c);
+      if (neighborOnLeft && !neighborIsFirst) continue;  // 邻居在左但不是首字 → 顺序错
+      if (!neighborOnLeft && !placeIsFirst) continue;    // 邻居在右但放置的不是首字（即放置在左却不是首字）→ 顺序错
+      return { neighborKey: nk, pair: pair };
     }
     return null;
   }
