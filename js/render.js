@@ -584,40 +584,46 @@
   };
 
   // 金箍棒（耍棍花旋转动画）
-  // x1,y1: 棒尾固定点（握把）；x2,y2: 棒头初始目标点；t: 时间；period: 转一圈周期（秒）
+  // x1,y1 与 x2,y2 为棒的两端初始位置；以两点中点为锚点，整根棒绕中点旋转
+  // t: 时间；period: 转一圈周期（秒）
   R.staff = function (ctx, x1, y1, x2, y2, t, period) {
     period = period || 0.9;
-    // 棍长 = 棒尾到棒头目标的距离
+    // 中点（旋转锚点）
+    var cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+    // 半棍长 = 中点到端点的距离
     var dx0 = x2 - x1, dy0 = y2 - y1;
-    var len = Math.hypot(dx0, dy0) || 1;
-    var baseAngle = Math.atan2(dy0, dx0); // 初始指向目标的角度
+    var halfLen = Math.hypot(dx0, dy0) / 2 || 1;
+    var baseAngle = Math.atan2(dy0, dx0); // 初始指向（棒尾→棒头）
     // 旋转：每 period 转一圈（耍棍花）
     var spinAngle = baseAngle + (t / period) * Math.PI * 2;
-    var headX = x1 + Math.cos(spinAngle) * len;
-    var headY = y1 + Math.sin(spinAngle) * len;
-    // pokePhase: 棍头扫过目标方向（靠近僧字）时接近 1，供僧字摆动躲避
+    // 棒头、棒尾绕中点对称
+    var headX = cx + Math.cos(spinAngle) * halfLen;
+    var headY = cy + Math.sin(spinAngle) * halfLen;
+    var tailX = cx - Math.cos(spinAngle) * halfLen;
+    var tailY = cy - Math.sin(spinAngle) * halfLen;
+    // pokePhase: 棍头扫过初始目标方向（靠近僧字）时接近 1，供僧字摆动躲避
     var diff = Math.atan2(Math.sin(spinAngle - baseAngle), Math.cos(spinAngle - baseAngle));
     var stab = Math.max(0, 1 - Math.abs(diff) / (Math.PI * 0.3));
 
     ctx.save();
     // 棒身方向向量与法向量
-    var dx = headX - x1, dy = headY - y1;
+    var dx = headX - tailX, dy = headY - tailY;
     var len2 = Math.hypot(dx, dy) || 1;
-    var ux = dx / len2, uy = dy / len2; // 单位方向
+    var ux = dx / len2, uy = dy / len2; // 单位方向（棒尾→棒头）
     var nx = -uy, ny = ux;              // 法向量
     // 棒身：深色铁柱（中段）
     ctx.strokeStyle = '#3a3530';
     ctx.lineWidth = 10;
     ctx.lineCap = 'butt';
     ctx.beginPath();
-    ctx.moveTo(x1 + ux * 16, y1 + uy * 16);
+    ctx.moveTo(tailX + ux * 16, tailY + uy * 16);
     ctx.lineTo(headX - ux * 16, headY - uy * 16);
     ctx.stroke();
     // 铁柱高光
     ctx.strokeStyle = 'rgba(120,110,100,0.55)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(x1 + ux * 18 + nx * 2, y1 + uy * 18 + ny * 2);
+    ctx.moveTo(tailX + ux * 18 + nx * 2, tailY + uy * 18 + ny * 2);
     ctx.lineTo(headX - ux * 18 + nx * 2, headY - uy * 18 + ny * 2);
     ctx.stroke();
 
@@ -645,17 +651,17 @@
     }
 
     // 棒尾金箍（两道环 + 端部球）
-    goldBand(x1 + ux * 6, y1 + uy * 6, 6);
-    goldBand(x1 + ux * 16, y1 + uy * 16, 6);
+    goldBand(tailX + ux * 6, tailY + uy * 6, 6);
+    goldBand(tailX + ux * 16, tailY + uy * 16, 6);
     ctx.fillStyle = '#e8c53a';
     ctx.strokeStyle = '#8a6a10';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(x1, y1, 10, 0, Math.PI * 2);
+    ctx.arc(tailX, tailY, 10, 0, Math.PI * 2);
     ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#b8860b';
     ctx.beginPath();
-    ctx.arc(x1, y1, 5, 0, Math.PI * 2);
+    ctx.arc(tailX, tailY, 5, 0, Math.PI * 2);
     ctx.fill();
 
     // 棒头金箍（两道环 + 端部球，更大更亮）
