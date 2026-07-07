@@ -74,10 +74,12 @@
     ctx.beginPath(); ctx.arc(172, 70, 20, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#8a6a10';
     R.font(ctx, 22, true);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
     ctx.fillText('刀', 172, 71);
     ctx.fillStyle = '#f2ead2';
     R.font(ctx, 30, true);
-    ctx.fillText(String(A.storageGet('zy_coin') || 0), 270, 71);
+    ctx.fillText(String(A.storageGet('zy_coin') || 0), 290, 71);
     ctx.restore();
 
     // 标题
