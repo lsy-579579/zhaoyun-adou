@@ -375,6 +375,8 @@
     var S = G.p;
     var bi = benchSlotAt(x, y);
     if (bi >= 0 && S.bench[bi]) {
+      var bu = S.bench[bi];
+      if (bu.attackT) bu.attackT = 0; // 拾取时清除攻击变形，避免拖到备战后卡在兵器形态
       drag = { from: { type: 'bench', idx: bi }, unit: S.bench[bi], x: x, y: y, downX: x, downY: y, moved: false };
       // 按下即显示攻击范围（抬手或移动后消失）
       selected = { side: 'p', key: 'bench_' + bi };
@@ -385,6 +387,8 @@
       var k = key(cell.c, cell.r);
       if (Map.cellType[k] === 'build_p' && S.units[k]) {
         var u = S.units[k];
+        if (u.attackT) u.attackT = 0; // 拾取时清除攻击变形
+        if (u.pairedKey && S.units[u.pairedKey] && S.units[u.pairedKey].attackT) S.units[u.pairedKey].attackT = 0;
         var d = { from: { type: 'cell', key: k }, unit: u, x: x, y: y, downX: x, downY: y, moved: false };
         // 武将半身：拾取后单字可独立拖动（拖走后另一半变回碎片）
         // 拖动超过阈值时才真正拆分（见 onMove），点击则用于查看攻击范围
