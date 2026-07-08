@@ -172,8 +172,8 @@
     ctx.fillText('⚔', 0, 0);
     ctx.restore();
 
-    // 武器库入口按钮（开始按钮左下）
-    UI.buttons.weaponLib = { x: DW / 2 - 190, y: DH * 0.68 + 116, w: 180, h: 56, label: '兵器库 ⚔', fs: 28 };
+    // 武器库入口按钮（右下角）
+    UI.buttons.weaponLib = { x: DW - 200, y: DH - 76, w: 180, h: 56, label: '兵器库 ⚔', fs: 28 };
     R.redButton(ctx, UI.buttons.weaponLib);
 
     var bestWave = parseInt(A.storageGet('zy_best') || '0', 10);
