@@ -12,6 +12,7 @@
   // ---- 5 种地图布局（玩家侧路径 + 建造格），对手侧 = 180° 镜像 ----
   // 约束：路径必须是从 (0,9) 到 (7,9) 的单条不自交连续线，
   //       相邻点曼哈顿距离=1，任何格不能被访问两次；建造格不能与路径重叠
+  // theme: 每张图独立的视觉风格（背景/草地/土路/外框/路缘装饰）
   var LAYOUTS = [
     {
       name: '火焰山',
@@ -26,7 +27,9 @@
       pBuild: [
         [1, 8], [2, 8], [4, 8], [5, 8],
         [1, 6], [2, 6], [4, 6], [5, 6]
-      ]
+      ],
+      // 火焰山：赭红焦土 + 熔岩裂纹
+      theme: { bg: '#e8d4b8', grass: '#c89a78', grassDark: '#a8744e', path: '#8a4a2a', pathDark: '#5e2e16', frame: '#5a2410', edge: 'ember' }
     },
     {
       name: '流沙河',
@@ -41,7 +44,9 @@
       pBuild: [
         [0, 8], [2, 8], [4, 8], [5, 8], [7, 8],
         [0, 6], [2, 6], [4, 6], [5, 6], [7, 6]
-      ]
+      ],
+      // 流沙河：黄沙漫天 + 沙波纹
+      theme: { bg: '#f0e6c8', grass: '#e4cf94', grassDark: '#c8ad6e', path: '#b89456', pathDark: '#8a6a2e', frame: '#6a4a1e', edge: 'sand' }
     },
     {
       name: '盘丝洞',
@@ -54,7 +59,9 @@
       pBuild: [
         [2, 9], [5, 9], [2, 8], [4, 8], [5, 8],
         [1, 6], [3, 6], [4, 6], [6, 6]
-      ]
+      ],
+      // 盘丝洞：幽暗洞穴 + 蛛网苔藓
+      theme: { bg: '#c8c4b4', grass: '#8aa890', grassDark: '#5e7a64', path: '#6a6258', pathDark: '#3e382e', frame: '#2a2620', edge: 'web' }
     },
     {
       name: '水帘洞',
@@ -68,7 +75,9 @@
       pBuild: [
         [5, 9], [6, 9], [0, 8], [1, 8], [2, 8], [3, 8], [5, 8], [6, 8],
         [1, 6], [4, 6], [6, 6]
-      ]
+      ],
+      // 水帘洞：青蓝水泽 + 水波涟漪
+      theme: { bg: '#d4dde0', grass: '#8ab0b8', grassDark: '#5e8a94', path: '#4a7682', pathDark: '#2a525e', frame: '#1e3e4a', edge: 'water' }
     },
     {
       name: '女儿国',
@@ -83,7 +92,9 @@
       pBuild: [
         [0, 8], [1, 8], [3, 8], [4, 8], [6, 8], [7, 8],
         [0, 6], [1, 6], [3, 6], [4, 6], [6, 6], [7, 6]
-      ]
+      ],
+      // 女儿国：粉樱庭院 + 花瓣飘落
+      theme: { bg: '#f4e0e0', grass: '#d8a8b0', grassDark: '#b87a84', path: '#c89aa0', pathDark: '#a06a72', frame: '#7a3a44', edge: 'petal' }
     }
   ];
 
@@ -108,6 +119,7 @@
     E_PATH = mirrorPath(P_PATH);
     P_BUILD = curLayout.pBuild;
     E_BUILD = mirrorBuild(P_BUILD);
+    M.theme = curLayout.theme; // 暴露当前主题给渲染层
     // 更新关卡名供 UI 显示
     if (ZY.C) ZY.C.LEVEL_NAME = curLayout.name;
     M._marked = false;

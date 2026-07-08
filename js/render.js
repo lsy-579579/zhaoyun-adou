@@ -30,16 +30,19 @@
     };
   }
 
-  // ---- 页面背景：暖米色 + 水墨远山 + 飞鸟小鹿 ----
+  // ---- 页面背景：暖米色 + 水墨远山 + 飞鸟小鹿（按地图主题调色）----
   var bgCache = null;
   R.paper = function (ctx, w, h) {
-    if (!bgCache || bgCache.width !== Math.ceil(w) || bgCache._h !== Math.ceil(h)) {
+    var th = R.theme();
+    var bgCol = th.bg || '#ded3bd';
+    if (!bgCache || bgCache.width !== Math.ceil(w) || bgCache._h !== Math.ceil(h) || bgCache._theme !== bgCol) {
       var c = A.createOffCanvas(Math.ceil(w), Math.ceil(h));
       if (!c) return;
       c._h = Math.ceil(h);
+      c._theme = bgCol;
       var g = c.getContext('2d');
       var rnd = srand(7);
-      g.fillStyle = '#ded3bd';
+      g.fillStyle = bgCol;
       g.fillRect(0, 0, w, h);
       // 纸纹
       g.globalAlpha = 0.06;
@@ -91,40 +94,132 @@
     }
   };
 
+  // 默认主题（兜底，当 Map.theme 未定义时使用）
+  var DEFAULT_THEME = { grass: '#a3bfa8', grassDark: '#5a7860', path: '#b6a28e', pathDark: '#78624e', frame: '#4a392b', edge: 'stone' };
+  R.theme = function () { return (ZY.Map && ZY.Map.theme) || DEFAULT_THEME; };
+
   // ---- 地砖 ----
   R.tileGreen = function (ctx, x, y, s, seed) {
     var rnd = srand(seed);
-    ctx.fillStyle = '#a3bfa8';
+    var th = R.theme();
+    ctx.fillStyle = th.grass;
     ctx.fillRect(x, y, s, s);
-    // 立体下边
-    ctx.fillStyle = 'rgba(90,120,96,0.5)';
+    // 立体下边（深色）
+    ctx.fillStyle = th.grassDark;
+    ctx.globalAlpha = 0.5;
     ctx.fillRect(x, y + s - 4, s, 4);
-    ctx.fillStyle = 'rgba(230,240,225,0.35)';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
     ctx.fillRect(x, y, s, 2);
-    // 苔斑
-    ctx.fillStyle = 'rgba(120,150,120,0.35)';
+    // 装饰纹理（按主题 edge 类型）
+    ctx.fillStyle = th.grassDark;
+    ctx.globalAlpha = 0.35;
+    var edge = th.edge;
     for (var i = 0; i < 3; i++) {
-      ctx.beginPath();
-      ctx.arc(x + rnd() * s, y + rnd() * s, 2 + rnd() * 4, 0, Math.PI * 2);
-      ctx.fill();
+      var px = x + rnd() * s, py = y + rnd() * s;
+      if (edge === 'ember') {
+        // 火焰山：熔岩裂纹
+        ctx.strokeStyle = '#d4622a';
+        ctx.globalAlpha = 0.5;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + (rnd() - 0.5) * 12, py + (rnd() - 0.5) * 12);
+        ctx.lineTo(px + (rnd() - 0.5) * 16, py + (rnd() - 0.5) * 16);
+        ctx.stroke();
+      } else if (edge === 'sand') {
+        // 流沙河：沙波纹
+        ctx.strokeStyle = th.pathDark;
+        ctx.globalAlpha = 0.4;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(px, py, 3 + rnd() * 4, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+      } else if (edge === 'web') {
+        // 盘丝洞：蛛网小点
+        ctx.beginPath();
+        ctx.arc(px, py, 1 + rnd() * 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (edge === 'water') {
+        // 水帘洞：水波涟漪
+        ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(px, py, 2 + rnd() * 4, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (edge === 'petal') {
+        // 女儿国：花瓣小点
+        ctx.fillStyle = '#f4b8c0';
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(px, py, 2 + rnd() * 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // 默认：苔斑
+        ctx.beginPath();
+        ctx.arc(px, py, 2 + rnd() * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
-    ctx.strokeStyle = 'rgba(80,100,84,0.4)';
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = th.grassDark;
+    ctx.globalAlpha = 0.4;
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, s - 1, s - 1);
+    ctx.globalAlpha = 1;
   };
 
   R.tilePath = function (ctx, x, y, s, seed) {
     var rnd = srand(seed);
-    ctx.fillStyle = '#b6a28e';
+    var th = R.theme();
+    ctx.fillStyle = th.path;
     ctx.fillRect(x, y, s, s);
-    ctx.fillStyle = 'rgba(140,118,98,0.45)';
+    ctx.fillStyle = th.pathDark;
+    ctx.globalAlpha = 0.5;
     ctx.fillRect(x, y + s - 3, s, 3);
-    // 碎石点
-    ctx.fillStyle = 'rgba(120,100,84,0.4)';
-    for (var i = 0; i < 4; i++) {
-      ctx.beginPath();
-      ctx.arc(x + rnd() * s, y + rnd() * s, 1.5 + rnd() * 2.5, 0, Math.PI * 2);
-      ctx.fill();
+    ctx.globalAlpha = 1;
+    // 路面装饰（按主题）
+    var edge = th.edge;
+    if (edge === 'ember') {
+      // 火焰山：路面余烬亮点
+      ctx.fillStyle = '#e8782a';
+      for (var i = 0; i < 4; i++) {
+        ctx.globalAlpha = 0.5 + rnd() * 0.3;
+        ctx.beginPath();
+        ctx.arc(x + rnd() * s, y + rnd() * s, 1 + rnd() * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (edge === 'water') {
+      // 水帘洞：水面反光
+      ctx.strokeStyle = 'rgba(220,240,245,0.4)';
+      ctx.lineWidth = 1;
+      for (var j = 0; j < 3; j++) {
+        ctx.beginPath();
+        ctx.moveTo(x + rnd() * s, y + rnd() * s);
+        ctx.lineTo(x + rnd() * s, y + rnd() * s);
+        ctx.stroke();
+      }
+    } else if (edge === 'petal') {
+      // 女儿国：路面落花
+      ctx.fillStyle = '#e898a0';
+      for (var k = 0; k < 3; k++) {
+        ctx.globalAlpha = 0.6;
+        ctx.beginPath();
+        ctx.arc(x + rnd() * s, y + rnd() * s, 1.5 + rnd() * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      // 默认 + 沙漠 + 洞穴：碎石点
+      ctx.fillStyle = th.pathDark;
+      ctx.globalAlpha = 0.4;
+      for (var m = 0; m < 4; m++) {
+        ctx.beginPath();
+        ctx.arc(x + rnd() * s, y + rnd() * s, 1.5 + rnd() * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
     }
   };
 
@@ -138,22 +233,61 @@
     ctx.strokeRect(x + 2.5, y + 2.5, s - 5, s - 5);
   };
 
-  // 路缘尖石
+  // 路缘装饰：按主题切换尖石/火苗/沙丘/水沫/花瓣
   R.pathStones = function (ctx, x1, y1, x2, y2) {
     var dx = x2 - x1, dy = y2 - y1;
     var len = Math.hypot(dx, dy);
     var n = Math.floor(len / 12);
-    ctx.fillStyle = 'rgba(74,60,48,0.85)';
+    var th = R.theme();
+    var edge = th.edge;
     for (var i = 0; i <= n; i++) {
       var t = i / n;
       var px = x1 + dx * t, py = y1 + dy * t;
       var h = 4 + ((i * 7) % 5);
-      ctx.beginPath();
-      ctx.moveTo(px - 5, py);
-      ctx.lineTo(px, py - h);
-      ctx.lineTo(px + 5, py);
-      ctx.closePath();
-      ctx.fill();
+      if (edge === 'ember') {
+        // 火焰山：小火苗
+        ctx.fillStyle = '#e8782a';
+        ctx.beginPath();
+        ctx.moveTo(px - 4, py);
+        ctx.quadraticCurveTo(px - 2, py - h * 0.8, px, py - h);
+        ctx.quadraticCurveTo(px + 2, py - h * 0.5, px + 4, py);
+        ctx.closePath();
+        ctx.fill();
+      } else if (edge === 'sand') {
+        // 流沙河：小沙丘弧线
+        ctx.strokeStyle = th.pathDark;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(px, py, h + 1, Math.PI, Math.PI * 2);
+        ctx.stroke();
+      } else if (edge === 'web') {
+        // 盘丝洞：蛛丝小点
+        ctx.fillStyle = 'rgba(220,220,200,0.7)';
+        ctx.beginPath();
+        ctx.arc(px, py, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (edge === 'water') {
+        // 水帘洞：水沫圆点
+        ctx.fillStyle = 'rgba(220,240,245,0.7)';
+        ctx.beginPath();
+        ctx.arc(px, py - h * 0.4, 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (edge === 'petal') {
+        // 女儿国：小花瓣
+        ctx.fillStyle = '#e898a0';
+        ctx.beginPath();
+        ctx.ellipse(px, py - h * 0.4, 3, 2, (i * 0.6), 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // 默认：尖石
+        ctx.fillStyle = 'rgba(74,60,48,0.85)';
+        ctx.beginPath();
+        ctx.moveTo(px - 5, py);
+        ctx.lineTo(px, py - h);
+        ctx.lineTo(px + 5, py);
+        ctx.closePath();
+        ctx.fill();
+      }
     }
   };
 

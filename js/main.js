@@ -91,9 +91,10 @@
   // ---- 地图绘制 ----
   function drawMap(ctx) {
     var L = ZY.L, Map = ZY.Map;
-    // 深棕外框
+    // 外框（按地图主题色）
+    var th = R.theme();
     ctx.save();
-    ctx.fillStyle = '#4a392b';
+    ctx.fillStyle = th.frame || '#4a392b';
     R.roundRect(ctx, L.mapX - 12, L.mapY - 12, L.mapW + 24, L.mapH + 24, 14);
     ctx.fill();
     ctx.restore();
